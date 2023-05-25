@@ -3,9 +3,14 @@ import 'package:zenith/widgets/home_page.dart';
 
 void main() {
   runApp(
-    const MaterialApp(
-      home: HomePage(),
-    ),
+    MaterialApp(
+        home: const HomePage(),
+        theme: ThemeData().copyWith(
+            useMaterial3: false,
+            appBarTheme: const AppBarTheme().copyWith(
+                backgroundColor: Color.fromARGB(145, 255, 255, 255),
+                foregroundColor: Colors.black,
+                titleSpacing: 0,),
+                )),
   );
 }
-// https://blog.logrocket.com/how-to-build-a-bottom-navigation-bar-in-flutter/

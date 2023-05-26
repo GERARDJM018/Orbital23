@@ -6,6 +6,7 @@ import 'package:zenith/widgets/scheduler.dart';
 import 'package:zenith/widgets/statistics.dart';
 import 'package:zenith/widgets/home.dart';
 import 'package:zenith/widgets/home_action.dart';
+import 'package:zenith/widgets/home_action2.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,9 +18,14 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String onGoing = 'choose the actions'; // problem is here
+  int minute = 0;
+  String cancleConfirm = 'cancle';
+  void inputMinute(int i) {
+    minute = i;
+  }
 
   String activeScreen = 'home-default';
-  String activePanel = 'action';
+  String activePanel = 'main';
   void switchScreen(int i) {
     if (i == 0) {
       setState(() {
@@ -50,8 +56,25 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void toHome() {
+    setState(() {
+      activePanel = 'main';
+      activeScreen = 'home-default';
+    });
+  }
+
+  void _chooseAction(String action) {
+    setState(() {
+      onGoing = action;
+      activeScreen =
+          activeScreen == 'home_action' ? 'home-action' : 'home_action';
+    });
+  }
+
   Widget whichTitle() {
-    if (activeScreen == 'home-default' || activeScreen == 'home-action') {
+    if (activeScreen == 'home-default' ||
+        activeScreen == 'home-action' ||
+        activeScreen == 'home_action') {
       // active screen is not changed
       return const Text(
         'Home',
@@ -86,43 +109,45 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     }
-    return const Text('Home');
+    return const Text('error');
   }
 
   int currentTab = 0;
-  Widget screenWidget = const Home('a');
+  Widget screenWidget = Home((String a) {}, 'a');
   Widget panelWidget = MainToolBar((i) {});
-
-  void _chooseAction(String action) {
-    setState(() {
-      onGoing = action;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     if (activeScreen == 'home-default') {
-      screenWidget = const Home('a');
+      screenWidget = Home(_chooseAction, 'a');
       currentTab = 0;
     }
     if (activeScreen == 'scheduler') {
-      screenWidget = const Scheduler('b');
+      screenWidget = Scheduler(_chooseAction, 'b');
       currentTab = 1;
     }
     if (activeScreen == 'statistics') {
-      screenWidget = const Statistics('c');
+      screenWidget = Statistics(_chooseAction, 'c');
       currentTab = 2;
     }
     if (activeScreen == 'menu') {
-      screenWidget = const Menu('d');
+      screenWidget = Menu(_chooseAction, 'd');
       currentTab = 3;
     }
     if (activePanel == 'main') {
       panelWidget = MainToolBar(switchScreen);
     }
     if (activePanel == 'action') {
-      panelWidget = ActionPanel(_chooseAction);
-      screenWidget = HomeAction(onGoing);
+      screenWidget = HomeAction(_chooseAction, onGoing);
+    }
+    if (activePanel == 'action') {
+      panelWidget = ActionPanel(_chooseAction, onGoing);
+    }
+    if (activeScreen == 'home-action') {
+      screenWidget = HomeAction(_chooseAction, onGoing);
+    }
+    if (activeScreen == 'home_action') {
+      screenWidget = HomeAction2(_chooseAction, onGoing);
     }
 
     return Scaffold(
@@ -133,13 +158,36 @@ class _HomePageState extends State<HomePage> {
       ), // do this
       body: screenWidget,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color.fromARGB(255, 32, 113, 35),
-        onPressed: toAction,
-        tooltip: 'Increment',
-        elevation: 2.0,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: activeScreen == 'home-default' ||
+              activeScreen == 'statistics' ||
+              activeScreen == 'scheduler' ||
+              activeScreen == 'menu'
+          ? FloatingActionButton(
+              backgroundColor: const Color.fromARGB(255, 32, 113, 35),
+              onPressed: activePanel == 'action' ? toHome : toAction,
+              tooltip: 'Increment',
+              elevation: 2.0,
+              child: const Icon(Icons.add),
+            )
+          : cancleConfirm == "cancle"
+              ? FloatingActionButton(
+                  backgroundColor: const Color.fromARGB(255, 32, 113, 35),
+                  onPressed: activePanel == 'action' ? toHome : toAction,
+                  tooltip: 'Increment',
+                  elevation: 2.0,
+                  child: const Icon(
+                    Icons.cancel_outlined,
+                    size: 50,
+                    color: Colors.black,
+                  ),
+                )
+              : FloatingActionButton(
+                  backgroundColor: const Color.fromARGB(255, 32, 113, 35),
+                  onPressed: activePanel == 'action' ? toHome : toAction,
+                  tooltip: 'Increment',
+                  elevation: 2.0,
+                  child: const Icon(Icons.start),
+                ),
 
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),

@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
 class Ongoing extends StatefulWidget {
-  const Ongoing(this.onGoingAction, {super.key});
+  const Ongoing(this.onGoingFunction, this.onGoingAction, {super.key});
+  final void Function(String a) onGoingFunction;
   final String onGoingAction;
   @override
-  _Ongoing createState() => _Ongoing(onGoingAction);
+  _Ongoing createState() => _Ongoing();
 }
 
 class _Ongoing extends State<Ongoing> {
-  final String onGoingAction;
-  _Ongoing(this.onGoingAction);
-
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
@@ -24,7 +22,7 @@ class _Ongoing extends State<Ongoing> {
             Expanded(
               flex: 9,
               child: Container(
-                child: Text(onGoingAction),
+                child: Text(widget.onGoingAction),
               ),
             ),
             Expanded(

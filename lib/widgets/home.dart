@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:zenith/widgets/ongoing.dart';
 
 class Home extends StatefulWidget {
-  const Home(this.onGoingAction, {super.key});
+  const Home(this.onGoingFunction,this.onGoingAction, {super.key});
   final String onGoingAction;
+  final void Function(String a) onGoingFunction;
   @override
   _HomeState createState() => _HomeState(onGoingAction);
 }
@@ -23,8 +24,8 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(flex: 1, child: Ongoing(onGoingAction)),
-        Expanded(
+        Expanded(flex: 1, child: Ongoing(widget.onGoingFunction, onGoingAction)),
+        const Expanded(
           flex: 8,
           child: Center(
             child: Text(
@@ -33,7 +34,7 @@ class _HomeState extends State<Home> {
             ),
           ),
         ),
-        Expanded(
+        const Expanded(
           child: Row(),
         )
       ],

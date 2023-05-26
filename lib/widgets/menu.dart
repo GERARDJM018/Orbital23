@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:zenith/widgets/ongoing.dart';
 
 class Menu extends StatefulWidget {
-  const Menu(this.onGoingAction, {super.key});
+  const Menu(this.onGoingFunction, this.onGoingAction, {super.key});
+  final void Function(String a) onGoingFunction;
   final String onGoingAction;
   
   @override
@@ -18,8 +19,8 @@ class _Menu extends State<Menu> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(flex: 1, child: Ongoing(onGoingAction)),
-        Expanded(
+        Expanded(flex: 1, child: Ongoing(widget.onGoingFunction, onGoingAction)),
+        const Expanded(
           flex: 8,
           child: Center(
             child: Text(
@@ -28,7 +29,7 @@ class _Menu extends State<Menu> {
             ),
           ),
         ),
-        Expanded(
+        const Expanded(
           child: Row(),
         )
       ],

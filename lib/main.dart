@@ -8,7 +8,7 @@ void main() {
         theme: ThemeData().copyWith(
             useMaterial3: false,
             appBarTheme: const AppBarTheme().copyWith(
-                backgroundColor: Color.fromARGB(145, 255, 255, 255),
+                backgroundColor: const Color.fromARGB(145, 255, 255, 255),
                 foregroundColor: Colors.black,
                 titleSpacing: 0,),
                 )),

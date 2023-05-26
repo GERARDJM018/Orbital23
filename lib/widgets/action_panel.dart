@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class ActionPanel extends StatefulWidget {
-  const ActionPanel(this.onGoing, {super.key});
+  const ActionPanel(this.chooseAction, this.onGoing, {super.key});
 
-  final void Function(String action) onGoing;
+  final void Function(String action) chooseAction;
+  final String onGoing;
 
   @override
   State<ActionPanel> createState() {
@@ -12,9 +13,8 @@ class ActionPanel extends StatefulWidget {
 }
 
 class _ActionPanel extends State<ActionPanel> {
-  final void Function(String onGoing) onGoing;
-
   _ActionPanel(this.onGoing);
+  String onGoing;
 
   @override
   Widget build(BuildContext context) {
@@ -24,27 +24,48 @@ class _ActionPanel extends State<ActionPanel> {
       children: <Widget>[
         IconButton(
             onPressed: () {
-              return onGoing('study');
+              widget.chooseAction('study');
+              onGoing = onGoing == 'study' ? 'nothing' : 'study';
             },
-            icon: Image.asset('lib/icons/study.png')),
+            icon: onGoing == 'study'
+                ? Image.asset(
+                    'lib/icons/study.png',
+                    color: Colors.blue,
+                  )
+                : Image.asset('lib/icons/study.png')),
         IconButton(
             onPressed: () {
-              return onGoing('workout');
+              widget.chooseAction('workout');
+              onGoing = onGoing == 'workout' ? 'nothing' : 'workout';
             },
-            icon: Image.asset('lib/icons/lunges.png')),
+            icon: onGoing == 'workout'
+                ? Image.asset('lib/icons/lunges.png', color: Colors.blue)
+                : Image.asset('lib/icons/lunges.png')),
         const SizedBox(
           width: 10,
         ),
         IconButton(
             onPressed: () {
-              return onGoing('sleep');
+              widget.chooseAction('sleep');
+              onGoing = onGoing == 'sleep' ? 'nothing' : 'sleep';
             },
-            icon: Image.asset('lib/icons/sleep.png')),
+            icon: onGoing == 'sleep'
+                ? Image.asset(
+                    'lib/icons/sleep.png',
+                    color: Colors.blue,
+                  )
+                : Image.asset('lib/icons/sleep.png')),
         IconButton(
             onPressed: () {
-              return onGoing('logout');
+              widget.chooseAction('logout');
+              onGoing = onGoing == 'logout' ? 'nothing' : 'logout';
             },
-            icon: Image.asset('lib/icons/logout.png')),
+            icon: onGoing == 'logout'
+                ? Image.asset(
+                    'lib/icons/logout.png',
+                    color: Colors.blue,
+                  )
+                : Image.asset('lib/icons/logout.png')),
       ],
     );
   }

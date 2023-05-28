@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:zenith/widgets/action_panel.dart';
-import 'package:zenith/widgets/main_toolbar.dart';
-import 'package:zenith/widgets/menu.dart';
-import 'package:zenith/widgets/scheduler.dart';
-import 'package:zenith/widgets/statistics.dart';
-import 'package:zenith/widgets/home.dart';
-import 'package:zenith/widgets/home_action.dart';
-import 'package:zenith/widgets/home_action2.dart';
+import 'package:authentication/widgets/action_panel.dart';
+import 'package:authentication/widgets/main_toolbar.dart';
+import 'package:authentication/widgets/menu.dart';
+import 'package:authentication/widgets/scheduler.dart';
+import 'package:authentication/widgets/statistics.dart';
+import 'package:authentication/widgets/home.dart';
+import 'package:authentication/widgets/home_action.dart';
+import 'package:authentication/widgets/home_action2.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
+  
+  
   @override
   State<HomePage> createState() {
     return _HomePageState();
@@ -17,8 +19,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  
+ 
+  void passTime(){
+
+  }
+ 
+
   String onGoing = 'choose the actions'; // problem is here
-  int minute = 0;
+  int minute =  0; 
   String cancleConfirm = 'cancle';
   void inputMinute(int i) {
     minute = i;
@@ -26,6 +35,7 @@ class _HomePageState extends State<HomePage> {
 
   String activeScreen = 'home-default';
   String activePanel = 'main';
+  
   void switchScreen(int i) {
     if (i == 0) {
       setState(() {
@@ -53,6 +63,18 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       activePanel = 'action';
       activeScreen = 'home_action';
+    });
+  }
+
+  void confirm() {
+    setState(() {
+      cancleConfirm = 'confirm';
+    });
+  }
+
+  void cancle() {
+    setState(() {
+      cancleConfirm = 'cancle';
     });
   }
 
@@ -113,13 +135,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   int currentTab = 0;
-  Widget screenWidget = Home((String a) {}, 'a');
+  Widget screenWidget = Home(0, (String a) {}, 'a');
   Widget panelWidget = MainToolBar((i) {});
 
   @override
   Widget build(BuildContext context) {
     if (activeScreen == 'home-default') {
-      screenWidget = Home(_chooseAction, 'a');
+      screenWidget = Home(minute, _chooseAction, 'a');
       currentTab = 0;
     }
     if (activeScreen == 'scheduler') {
@@ -138,16 +160,16 @@ class _HomePageState extends State<HomePage> {
       panelWidget = MainToolBar(switchScreen);
     }
     if (activePanel == 'action') {
-      screenWidget = HomeAction(_chooseAction, onGoing);
+      screenWidget = HomeAction(minute, _chooseAction, onGoing);
     }
     if (activePanel == 'action') {
-      panelWidget = ActionPanel(_chooseAction, onGoing);
+      panelWidget = ActionPanel(_chooseAction, onGoing, confirm, cancle);
     }
     if (activeScreen == 'home-action') {
-      screenWidget = HomeAction(_chooseAction, onGoing);
+      screenWidget = HomeAction(minute, _chooseAction, onGoing);
     }
     if (activeScreen == 'home_action') {
-      screenWidget = HomeAction2(_chooseAction, onGoing);
+      screenWidget = HomeAction2(minute, _chooseAction, onGoing);
     }
 
     return Scaffold(
@@ -183,7 +205,7 @@ class _HomePageState extends State<HomePage> {
                 )
               : FloatingActionButton(
                   backgroundColor: const Color.fromARGB(255, 32, 113, 35),
-                  onPressed: activePanel == 'action' ? toHome : toAction,
+                  onPressed: () {},
                   tooltip: 'Increment',
                   elevation: 2.0,
                   child: const Icon(Icons.start),

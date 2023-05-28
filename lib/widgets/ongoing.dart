@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 
 class Ongoing extends StatefulWidget {
-  const Ongoing(this.onGoingFunction, this.onGoingAction, {super.key});
+  final int time;
+  const Ongoing(this.time, this.onGoingFunction, this.onGoingAction, {super.key});
   final void Function(String a) onGoingFunction;
   final String onGoingAction;
+  
+  
   @override
-  _Ongoing createState() => _Ongoing();
+  _Ongoing createState() => _Ongoing(time);
 }
 
 class _Ongoing extends State<Ongoing> {
+  _Ongoing(this.time);
+  int time;
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
@@ -28,7 +33,7 @@ class _Ongoing extends State<Ongoing> {
             Expanded(
               flex: 1,
               child: Container(
-                child: Text('Time'),
+                child: Text(time.toString()),
               ),
             ),
           ],

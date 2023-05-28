@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ActionPanel extends StatefulWidget {
-  const ActionPanel(this.chooseAction, this.onGoing, {super.key});
+  const ActionPanel(this.chooseAction, this.onGoing, this.confirm, this.cancle,
+      {super.key});
 
   final void Function(String action) chooseAction;
   final String onGoing;
+  final void Function() confirm;
+  final void Function() cancle;
+  
 
   @override
   State<ActionPanel> createState() {
@@ -25,7 +29,13 @@ class _ActionPanel extends State<ActionPanel> {
         IconButton(
             onPressed: () {
               widget.chooseAction('study');
-              onGoing = onGoing == 'study' ? 'nothing' : 'study';
+              if (onGoing == 'study') {
+                onGoing = 'nothing';
+                widget.cancle();
+              } else {
+                onGoing = 'study';
+                widget.confirm();
+              }
             },
             icon: onGoing == 'study'
                 ? Image.asset(
@@ -36,7 +46,13 @@ class _ActionPanel extends State<ActionPanel> {
         IconButton(
             onPressed: () {
               widget.chooseAction('workout');
-              onGoing = onGoing == 'workout' ? 'nothing' : 'workout';
+              if (onGoing == 'workout') {
+                onGoing = 'nothing';
+                widget.cancle();
+              } else {
+                onGoing = 'workout';
+                widget.confirm();
+              }
             },
             icon: onGoing == 'workout'
                 ? Image.asset('lib/icons/lunges.png', color: Colors.blue)
@@ -47,7 +63,13 @@ class _ActionPanel extends State<ActionPanel> {
         IconButton(
             onPressed: () {
               widget.chooseAction('sleep');
-              onGoing = onGoing == 'sleep' ? 'nothing' : 'sleep';
+              if (onGoing == 'sleep') {
+                onGoing = 'nothing';
+                widget.cancle();
+              } else {
+                onGoing = 'sleep';
+                widget.confirm();
+              }
             },
             icon: onGoing == 'sleep'
                 ? Image.asset(
@@ -58,7 +80,13 @@ class _ActionPanel extends State<ActionPanel> {
         IconButton(
             onPressed: () {
               widget.chooseAction('logout');
-              onGoing = onGoing == 'logout' ? 'nothing' : 'logout';
+              if (onGoing == 'logout') {
+                onGoing = 'nothing';
+                widget.cancle();
+              } else {
+                onGoing = 'logout';
+                widget.confirm();
+              }
             },
             icon: onGoing == 'logout'
                 ? Image.asset(

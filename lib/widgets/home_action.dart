@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:zenith/widgets/ongoing.dart';
+import 'package:authentication/widgets/ongoing.dart';
 
 class HomeAction extends StatefulWidget {
-  const HomeAction(this.onGoingFuntion, this.onGoingAction, {super.key});
+  HomeAction(this.minute, this.onGoingFuntion, this.onGoingAction, {super.key});
   final String onGoingAction;
   final void Function(String a) onGoingFuntion;
+  final int minute;
+  final _timeController = TextEditingController();
+  int timeGetter() {
+    return int.parse(_timeController.toString());
+  }
 
   @override
-  _HomeActionState createState() => _HomeActionState(onGoingAction);
+  _HomeActionState createState() => _HomeActionState(onGoingAction, minute);
 }
 
 class _HomeActionState extends State<HomeAction> {
   final String onGoingAction;
 
-  _HomeActionState(this.onGoingAction);
+  _HomeActionState(this.onGoingAction, this.minute);
 
-  final _timeController = TextEditingController();
+  int minute;
 
   @override
   void dispose() {
-    _timeController.dispose();
+    widget._timeController.dispose();
     super.dispose();
   }
 
@@ -27,7 +32,9 @@ class _HomeActionState extends State<HomeAction> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(flex: 1, child: Ongoing(widget.onGoingFuntion, onGoingAction)),
+        Expanded(
+            flex: 1,
+            child: Ongoing(minute, widget.onGoingFuntion, onGoingAction)),
         const Expanded(
           flex: 8,
           child: Center(
@@ -66,7 +73,7 @@ class _HomeActionState extends State<HomeAction> {
                         padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
                         child: TextField(
                           keyboardType: TextInputType.datetime,
-                          controller: _timeController,
+                          controller: widget._timeController,
                           maxLength: 3,
                           decoration: const InputDecoration(
                               floatingLabelBehavior:

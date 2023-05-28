@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:zenith/widgets/ongoing.dart';
+
 
 class Statistics extends StatefulWidget {
   const Statistics(this.onGoingFunction, this.onGoingAction, {super.key});
@@ -15,9 +15,9 @@ class _Statistics extends State<Statistics> {
   _Statistics(this.onGoingAction);
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       children: [
-        Expanded(flex: 1, child: Ongoing(widget.onGoingFunction, onGoingAction)),
+        Expanded(flex: 1, child: SizedBox()),
         Expanded(
           flex: 8,
           child: Center(

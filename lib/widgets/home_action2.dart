@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:zenith/widgets/ongoing.dart';
+import 'package:authentication/widgets/ongoing.dart';
 
 class HomeAction2 extends StatefulWidget {
-  const HomeAction2(this.onGoingFuntion, this.onGoingAction, {super.key});
+  const HomeAction2(this.minute, this.onGoingFuntion, this.onGoingAction, {super.key});
   final String onGoingAction;
   final void Function(String a) onGoingFuntion;
+  final int minute;
 
   @override
-  _HomeActionState2 createState() => _HomeActionState2(onGoingAction);
+  _HomeActionState2 createState() => _HomeActionState2(onGoingAction, minute);
 }
 
 class _HomeActionState2 extends State<HomeAction2> {
+   int timeGetter() {
+    return int.parse(_timeController.toString());
+  }
   final String onGoingAction;
+  int minute;
 
-  _HomeActionState2(this.onGoingAction);
+  _HomeActionState2(this.onGoingAction, this.minute);
 
   final _timeController = TextEditingController();
 
@@ -27,7 +32,7 @@ class _HomeActionState2 extends State<HomeAction2> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(flex: 1, child: Ongoing(widget.onGoingFuntion, onGoingAction)),
+        Expanded(flex: 1, child: Ongoing(minute, widget.onGoingFuntion, onGoingAction)),
         const Expanded(
           flex: 8,
           child: Center(

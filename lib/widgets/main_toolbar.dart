@@ -14,7 +14,9 @@ class _MainToolBar extends State<MainToolBar> {
   int index = 0;
   @override
   Widget build(context) {
-    return Row(
+    return Container(
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),color: Colors.black),
+      child: Row(
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: <Widget>[
@@ -54,7 +56,7 @@ class _MainToolBar extends State<MainToolBar> {
                 ? Image.asset('lib/icons/redmenu.png')
                 : Image.asset('lib/icons/menu.png')),
       ],
-    );
+    ));
   }
 }
 

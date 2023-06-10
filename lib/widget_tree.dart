@@ -1,4 +1,4 @@
-import 'package:zenith/widgets/home_page.dart';
+import 'package:zenith/pages_controller.dart';
 import 'package:zenith/pages/login_register.page.dart';
 import 'package:zenith/auth.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +17,7 @@ class _WidgetTreeState extends State<WidgetTree>  {
       stream: Auth().authStateChanges,
       builder: (context, snapshot) {
         if (snapshot.hasData)  {
-          return HomePage();
+          return NavigationWrapper();
         } else {
           return const LoginPage();
         }

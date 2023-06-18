@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:zenith/pages/home_page.dart';
 import 'package:zenith/pages/schedule_page.dart'; 
-
+import 'package:zenith/pages/mood.dart';
+import 'package:zenith/pages/statistics.dart';
 
 
 class NavigationWrapper extends StatefulWidget {
@@ -15,6 +16,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   final List<Widget> _pages = [
     HomePage(),
     const SchedulePage(),
+    MyMood(),
+    Statistics(),
+
+
   ];
 
   void _showPopup(BuildContext context) {

@@ -21,6 +21,7 @@ class EditEvent extends StatefulWidget {
 }
 
 class _EditEventState extends State<EditEvent> {
+  late String _type;
   final User? user = Auth().currentUser;
   late DateTime _selectedDate;
   late TextEditingController _titleController;
@@ -29,10 +30,12 @@ class _EditEventState extends State<EditEvent> {
   late TextEditingController _startMController;
   late TextEditingController _endHController;
   late TextEditingController _endMController;
+  List<String> TypeMode = ['Class', 'Test', 'Refreshing', 'Assignment', 'Others']; 
   
   @override
   void initState() {
     super.initState();
+    _type = widget.event.type;
     _selectedDate = widget.event.date;
     _titleController = TextEditingController(text: widget.event.title);
     _descController = TextEditingController(text: widget.event.description);
@@ -118,6 +121,25 @@ class _EditEventState extends State<EditEvent> {
                 keyboardType: TextInputType.number,
               )),
           ]),
+            SizedBox(height: 10,),
+            DropdownButton(
+              value: _type,
+              items: TypeMode
+                .map((category) => DropdownMenuItem(
+                 value: category,
+                  child: Text(
+                    category,
+                )))
+                .toList(),
+              onChanged: (value){
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _type = value;
+                });
+              }),
+
           TextField(
             controller: _descController,
             maxLines: 5,
@@ -145,6 +167,7 @@ class _EditEventState extends State<EditEvent> {
     final startM = _startMController.text;
     final endH = _endHController.text;
     final endM = _endMController.text;
+    final type = _type;
     if (title.isEmpty) {
       print('title cannot be empty');
       return;
@@ -162,6 +185,7 @@ class _EditEventState extends State<EditEvent> {
       "startM": int.parse(startM),
       "endH": int.parse(endH),
       "endM": int.parse(endM),
+      "type": type,
       "email": user?.email ?? 'User email',
     });
     if (mounted) {

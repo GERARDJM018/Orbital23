@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zenith/models/actions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zenith/auth.dart';
+import 'package:zenith/pages/webview.dart';
 import 'package:get/get.dart';
 import 'dart:async';
 
@@ -22,7 +23,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int updatedFinishedActions = finishedActions.length;
-  String currentAction = 'no activity';
+  String currentAction = 'No activity';
   static TextEditingController _titleController = TextEditingController();
   static TextEditingController _timeController = TextEditingController();
   static TextEditingController _noteController = TextEditingController();
@@ -63,13 +64,9 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         if (progressPercentage >= 1.0) {
           timer.cancel();
-          if (progressPercentage == 1.0) {
-            Timer(Duration(seconds: 3), () {
-              setState(() {
-                progressPercentage = 0.0;
-              });
+            setState(() {
+              currentAction = 'finished';
             });
-          }
         } else {
           progressPercentage += increment;
         }
@@ -77,8 +74,17 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _cancelActivity() {
+    setState(() {
+      currentAction = 'No activity';
+      progressPercentage = 0.0;
+    });
+    _titleController.clear();
+  }
+
   void _addActions(Actions1 actions) {
     setState(() {
+      currentAction = 'loading';
       progressPercentage = 0;
       finishedActions.add(actions);
       TimerController timerController = Get.find<TimerController>();
@@ -159,24 +165,6 @@ class _HomePageState extends State<HomePage> {
             minHeight: 20,
           )),
     );
-    Container(
-      height: getShapeHeight(context) * 0.025,
-      width: getShapeWidth(context) * 0.97,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(40),
-        color: const Color.fromARGB(
-            255, 199, 200, 196), // not the background colour
-      ),
-      child: ClipRRect(
-          borderRadius: BorderRadius.circular(10.0),
-          child: LinearProgressIndicator(
-            value: progressPercentage,
-            backgroundColor: Color.fromARGB(255, 27, 90, 115),
-            valueColor:
-                AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 11, 122, 68)),
-            minHeight: 20,
-          )),
-    );
     return MaterialApp(
       title: 'Home Page',
       color: Colors.black,
@@ -208,26 +196,30 @@ class _HomePageState extends State<HomePage> {
                         // page controller finishedActions but how to access?-> imitate expenses list
                         height: 5,
                       ),
-                      progress,
+                      _titleController.text == '' ? SizedBox(height: 20,) : progress,
                       const SizedBox(
                         height: 5,
                       ),
-                      _refreshAndPoint(context)
+                      _refreshAndPoint(context),
+                      Container(width: 200, height: 200, child: Webview()),
                     ],
                   ))),
         ),
         floatingActionButton: FloatingActionButton(
+          heroTag: "home",
+          backgroundColor: Colors.orange,
           onPressed: () {
-            _openAddActionsOverlay();
-            /*if (_titleController.text == '') {
+            if (currentAction == 'No activity')   {
               _openAddActionsOverlay();
+            } else if(currentAction == 'loading') {
+              _cancelActivity();
             } else {
-              
-            }*/
+              _cancelActivity();
+            }
           },
-          child: Icon(Icons.add),
+          child: currentAction == 'No activity' ? Icon(Icons.add) : currentAction == 'loading' ? Icon(Icons.cancel) : Icon(Icons.check),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     );
   }

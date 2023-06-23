@@ -188,6 +188,7 @@ class _StartPageState extends State<StartPage> {
               height: 30,
               width: 30,
               child: FloatingActionButton(
+                heroTag: "mood",
                 backgroundColor: Colors.red,
                 child: Icon(Icons.done),
                 onPressed: () => setState(() {

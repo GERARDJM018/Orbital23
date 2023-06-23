@@ -10,6 +10,7 @@ class Event {
   final int endM;
   final String id;
   final String email;
+  final String type;
   Event({
     required this.title,
     this.description,
@@ -20,6 +21,8 @@ class Event {
     required this.endM,
     required this.id,
     required this.email,
+    required this.type,
+
   });
 
   factory Event.fromFirestore(DocumentSnapshot<Map<String, dynamic>> snapshot,
@@ -35,6 +38,7 @@ class Event {
       startM: data['startM'],
       endH: data['endH'],
       endM: data['endM'],
+      type: data['type'],
     );
   }
 
@@ -48,6 +52,7 @@ class Event {
       "startM": startM,
       "endH": endH,
       "endM": endM,
+      "type": type,
     };
   }
 }

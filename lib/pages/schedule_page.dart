@@ -23,7 +23,10 @@ class _SchedulePageState extends State<SchedulePage> {
   late DateTime _lastDay;
   late DateTime _selectedDay;
   late CalendarFormat _calendarFormat;
+  String _calendarMode = 'Month';
   late Map<DateTime, List<Event>> _events;
+
+  List<String> CalenderMode = ['Month', 'Two Weeks', 'Week']; 
 
   int getHashCode(DateTime key) {
     return key.day * 1000000 + key.month * 10000 + key.year;
@@ -130,12 +133,12 @@ Widget tableCalendar(BuildContext context)  {
                borderRadius: BorderRadius.circular(20),
                color: Colors.white),
               child: DropdownButton(
-                    value: _calendarFormat,
-                    items: CalendarFormat.values
+                    value: _calendarMode,
+                    items: CalenderMode
                         .map((category) => DropdownMenuItem(
                             value: category,
                             child: Text(
-                              category.name,
+                              category,
                               )))
                         .toList(),
                     onChanged: (value) {
@@ -143,7 +146,16 @@ Widget tableCalendar(BuildContext context)  {
                         return;
                       }
                       setState(() {
-                        _calendarFormat = value;
+                        if (value == 'Month'){
+                          _calendarMode = value;
+                          _calendarFormat = CalendarFormat.month;
+                        } else if (value == 'Week') {
+                          _calendarMode = value;
+                          _calendarFormat = CalendarFormat.week;
+                        } else {
+                          _calendarMode = value;
+                          _calendarFormat = CalendarFormat.twoWeeks;
+                        }
                       });
                     })),
             SizedBox(height: 20,),
@@ -210,7 +222,8 @@ Widget tableCalendar(BuildContext context)  {
                 ,])
               ),
       floatingActionButton: FloatingActionButton(
-        heroTag: null,
+        heroTag: "schedule",
+        backgroundColor: Colors.orange,
         onPressed: () async {
           final result = await Navigator.push<bool>(
             context,
@@ -228,6 +241,7 @@ Widget tableCalendar(BuildContext context)  {
       },
         child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

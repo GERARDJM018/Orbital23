@@ -22,12 +22,15 @@ class AddEvent extends StatefulWidget {
 class _AddEventState extends State<AddEvent> {
   final User? user = Auth().currentUser;
   late DateTime _selectedDate;
+  static String _type = 'Class';
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _startHController = TextEditingController();
   final _startMController = TextEditingController();
   final _endHController = TextEditingController();
   final _endMController = TextEditingController();
+  List<String> TypeMode = ['Class', 'Test', 'Refreshing', 'Assignment', 'Others']; 
+  
   @override
   void initState() {
     super.initState();
@@ -112,6 +115,24 @@ class _AddEventState extends State<AddEvent> {
                 keyboardType: TextInputType.number,
               )),
           ]),
+          SizedBox(height: 10,),
+          DropdownButton(
+            value: _type,
+            items: TypeMode
+              .map((category) => DropdownMenuItem(
+                value: category,
+                child: Text(
+                  category,
+              )))
+              .toList(),
+            onChanged: (value){
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _type = value;
+              });
+            }),
           TextField(
             controller: _descController,
             maxLines: 5,
@@ -140,6 +161,7 @@ class _AddEventState extends State<AddEvent> {
     final startM = _startMController.text;
     final endH = _endHController.text;
     final endM = _endMController.text;
+    final type = _type;
     if (title.isEmpty) {
       print('title cannot be empty');
 	  	// you can use snackbar to display erro to the user
@@ -158,6 +180,7 @@ class _AddEventState extends State<AddEvent> {
       "startM": int.parse(startM),
       "endH": int.parse(endH),
       "endM": int.parse(endM),
+      "type": type,
       "email": user?.email ?? 'User email',
     });
     if(mounted) {

@@ -70,7 +70,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     return Container(
         alignment: Alignment.center,
         decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10), color: Colors.black),
+            color: Colors.black),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.max,
@@ -165,7 +165,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         bottomNavigationBar: BottomAppBar(
             height: 80,
             shape: const CircularNotchedRectangle(),
-            padding: const EdgeInsets.only(bottom: 5, left: 5, right: 5),
+            padding: const EdgeInsets.only(bottom: 0, left: 0, right: 0, top: 0),
             elevation: 5,
             color: const Color.fromARGB(255, 219, 221, 220),
             shadowColor: Colors.transparent,

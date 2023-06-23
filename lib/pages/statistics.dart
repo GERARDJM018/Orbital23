@@ -136,9 +136,6 @@ class _StatisticsState extends State<Statistics> {
     }
   }
 
-
-  _StatisticsState();
-
   void editHabit(String id, TextEditingController controller) async {
     String userID = getUserId();
     DocumentReference userDoc = firestore.collection("users").doc(userID);
@@ -296,11 +293,9 @@ class _StatisticsState extends State<Statistics> {
 
   Stream<QuerySnapshot<Object?>> streamData() {
     String userID = getUserId();
-    print(userID);
     CollectionReference habits =
         firestore.collection("users").doc(userID).collection("habits");
     calculateHabitPercentage();
-    print(habits);
     return habits.snapshots();
   }
 
@@ -315,9 +310,7 @@ class _StatisticsState extends State<Statistics> {
         stream: streamData(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            print("asd");
             return Text('No data available');
-            
           }
 
           if (snapshot.hasError) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zenith/models/activity.dart';
+
 import 'package:zenith/models/mood.dart';
 import 'package:zenith/models/moodcard.dart';
 import 'package:zenith/widgets/activity.dart';
@@ -19,7 +20,8 @@ class _StartPageState extends State<StartPage> {
   String? image = '';
   late String datepicked;
   late String timepicked;
-  String? datetime = '';
+  String? date = "";
+  String? time = "";
   late int currentindex;
   int ontapcount = 0;
   List<Mood> moods = [
@@ -121,6 +123,8 @@ class _StartPageState extends State<StartPage> {
                         setState(() {
                           datepicked =
                               "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}";
+                          date =
+                              "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}";
                           dateonly =
                               "${selectedDate.day}/${selectedDate.month}";
                         });
@@ -154,9 +158,9 @@ class _StartPageState extends State<StartPage> {
                     onTap: () {
                       showTimePicker(
                               context: context, initialTime: TimeOfDay.now())
-                          .then((time) => {
+                          .then((x) => {
                                 setState(() {
-                                  timepicked = time!.format(context).toString();
+                                  time = x!.format(context).toString();
                                 })
                               });
                     },
@@ -184,20 +188,7 @@ class _StartPageState extends State<StartPage> {
                   ),
                 ]),
             SizedBox(height: 20),
-            Container(
-              height: 30,
-              width: 30,
-              child: FloatingActionButton(
-                heroTag: "mood",
-                backgroundColor: Colors.red,
-                child: Icon(Icons.done),
-                onPressed: () => setState(() {
-                  datetime = datepicked + '   ' + timepicked;
-                }),
-              ),
-            ),
-            SizedBox(height: 20),
-            Text('WHAT YOU FEELING NOW?',
+            Text('How are you feeling?',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             SizedBox(height: 6),
             Text('(Tap to Select and Tap again to deselect!)',
@@ -206,6 +197,7 @@ class _StartPageState extends State<StartPage> {
               child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: moods.length,
+                  itemExtent: MediaQuery.of(context).size.width / 4.5,
                   itemBuilder: (context, index) {
                     return Row(
                       children: <Widget>[
@@ -240,15 +232,16 @@ class _StartPageState extends State<StartPage> {
                     );
                   }),
             ),
-            Text('WHAT YOU HAVE BEEN DOING?',
+            Text('What have you been doing?',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             SizedBox(height: 10),
-            Text('Hold on the activity to select,You can choose multiple',
+            Text('Tap the activity to select,You can choose multiple',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             Expanded(
               child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: act.length,
+                  itemExtent: MediaQuery.of(context).size.width / 4.5,
                   itemBuilder: (context, index) {
                     return Row(children: <Widget>[
                       SizedBox(
@@ -285,7 +278,8 @@ class _StartPageState extends State<StartPage> {
             ),
             GestureDetector(
               onTap: () {
-                if (datetime == null ||
+                if (date == null ||
+                    time == null ||
                     mood == null ||
                     image == null ||
                     Provider.of<MoodCard>(context, listen: false)
@@ -319,12 +313,12 @@ class _StartPageState extends State<StartPage> {
                     MoodCard moodCard =
                         Provider.of<MoodCard>(context, listen: false);
                     moodCard.addPlace(
-                      datetime!,
+                      date!,
+                      time!,
                       mood!,
                       image!,
                       moodCard.activityimage.toSet().join('_'),
                       moodCard.activityname.toSet().join('_'),
-                      dateonly,
                     );
                     moodCard.activities
                         .clear(); // Clear the selected activities

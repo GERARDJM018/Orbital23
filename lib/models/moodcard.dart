@@ -24,34 +24,44 @@ class MoodCard extends ChangeNotifier {
     activities.remove(activity);
     activityimage.remove(activity.image);
     activityname.remove(activity.name);
+    
     notifyListeners();
   }
 
-  String? datetime;
   String? mood;
   List<String> activityname = [];
   List<String> activityimage = [];
   String? image;
   String? actimage;
   String? actname;
-  MoodCard({this.actimage, this.actname, this.datetime, this.image, this.mood});
+  MoodCard(
+      {this.actimage,
+      this.actname,
+      this.date,
+      this.time,
+      this.image,
+      this.mood});
   late List items;
   List<MoodData> data = [];
-  late String date;
+  late String? time;
+  late String? date;
   bool isloading = false;
   List<String> actiname = [];
 
-  Future<void> addPlace(String datetime, String mood, String image,
-      String actimage, String actname, String date) async {
+  Future<void> addPlace(String date, String time, String mood, String image,
+      String actimage, String actname) async {
+    print(date);
+    print(time);
+
     List<String> uniqueActivityImage = activityimage.toSet().toList();
     List<String> uniqueActivityName = activityname.toSet().toList();
     await FirebaseFirestore.instance.collection('user_moods').add({
-      'datetime': datetime,
+      'date': date,
+      'time': time,
       'mood': mood,
       'image': image,
       'actimage': actimage,
       'actname': actname,
-      'date': date
     });
     Activity activity = Activity(actimage, actname, false);
     add(activity);

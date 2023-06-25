@@ -83,10 +83,9 @@ class _StatisticsState extends State<Statistics> {
 
         Map<String, dynamic>? data =
             percentageSnapshot.data() as Map<String, dynamic>?;
-        String? percentage = data?['percentage'] as String?;
+        String? percentage = data?['percentage'];
 
-        parsedPercentage = double.tryParse(percentage!)!; //correct
-
+        parsedPercentage = double.tryParse(percentage == null ? '0.0' : percentage)!; //correct
         final percentForEachDay = <DateTime, int>{
           DateTime(year, month, day): (parsedPercentage * 10).toInt(),
         };
@@ -229,6 +228,7 @@ class _StatisticsState extends State<Statistics> {
     // new change
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
+      print(user);
       return user.uid;
     }
     // If the user is not authenticated or null, handle the case accordingly

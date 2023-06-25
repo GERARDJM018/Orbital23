@@ -4,7 +4,6 @@ import 'package:zenith/models/moodcard.dart';
 import 'package:zenith/widgets/mooddaycard.dart';
 import 'package:provider/provider.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool loader = false;
+
   @override
   Widget build(BuildContext context) {
     loader = Provider.of<MoodCard>(context, listen: true).isloading;
@@ -25,8 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: Colors.red,
               actions: <Widget>[
                 IconButton(
-                    icon: Icon(Icons.show_chart),
-                    onPressed: () => Navigator.of(context).pushNamed('/chart'))
+                  icon: Icon(Icons.show_chart),
+                  onPressed: () => Navigator.of(context).pushNamed('/chart'),
+                ),
               ],
             ),
             body: StreamBuilder<QuerySnapshot>(
@@ -47,6 +48,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 final docs = snapshot.data!.docs;
+                int count = 0;
+
+                var moodCardProvider =
+                    Provider.of<MoodCard>(context, listen: false);
+                moodCardProvider.actiname.clear();
+                moodCardProvider.data.clear();
 
                 return ListView.builder(
                   shrinkWrap: true,
@@ -54,67 +61,71 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemBuilder: (context, int position) {
                     var doc = docs[position];
                     var data = doc.data() as Map<String, dynamic>?;
+                    count++;
+                    print(data);
 
                     if (data == null) {
-                      return SizedBox
-                          .shrink(); // Return an empty widget or handle the null case appropriately
+                      return SizedBox.shrink();
                     }
 
                     var imageString = data['actimage'];
-                    List<String> img = imageString.split('_');
-                    List<String> name = data['actname'].split("_");
-                    Provider.of<MoodCard>(context, listen: false)
-                        .actiname
-                        .addAll(name);
+                    List<String> img = [];
+                    if (imageString != null) {
+                      img = imageString.split('_');
+                    }
+                    var nameString = data['actname'];
+                    List<String> name = [];
+                    if (nameString != null) {
+                      name = nameString.split('_');
+                    }
+                    moodCardProvider.actiname.addAll(name);
 
-                    Provider.of<MoodCard>(context, listen: false).data.add(
-                          MoodData(
-                            data['mood'] == 'Angry'
-                                ? 1
-                                : data['mood'] == 'Happy'
-                                    ? 2
-                                    : data['mood'] == 'Sad'
-                                        ? 3
-                                        : data['mood'] == 'Surprised'
-                                            ? 4
-                                            : data['mood'] == 'Loving'
-                                                ? 5
-                                                : data['mood'] == 'Scared'
-                                                    ? 6
-                                                    : 7,
-                            data['date'],
-                            data['mood'] == 'Angry'
-                                ? charts.ColorUtil.fromDartColor(Colors.red)
-                                : data['mood'] == 'Happy'
+                    moodCardProvider.data.add(
+                      MoodData(
+                        data['mood'] == 'Angry'
+                            ? 1
+                            : data['mood'] == 'Happy'
+                                ? 2
+                                : data['mood'] == 'Sad'
+                                    ? 3
+                                    : data['mood'] == 'Surprised'
+                                        ? 4
+                                        : data['mood'] == 'Loving'
+                                            ? 5
+                                            : data['mood'] == 'Scared'
+                                                ? 6
+                                                : 7,
+                        data['date'],
+                        data['mood'] == 'Angry'
+                            ? charts.ColorUtil.fromDartColor(Colors.red)
+                            : data['mood'] == 'Happy'
+                                ? charts.ColorUtil.fromDartColor(Colors.blue)
+                                : data['mood'] == 'Sad'
                                     ? charts.ColorUtil.fromDartColor(
-                                        Colors.blue)
-                                    : data['mood'] == 'Sad'
+                                        Colors.green)
+                                    : data['mood'] == 'Surprised'
                                         ? charts.ColorUtil.fromDartColor(
-                                            Colors.green)
-                                        : data['mood'] == 'Surprised'
+                                            Colors.pink)
+                                        : data['mood'] == 'Loving'
                                             ? charts.ColorUtil.fromDartColor(
-                                                Colors.pink)
-                                            : data['mood'] == 'Loving'
+                                                Colors.purple)
+                                            : data['mood'] == 'Scared'
                                                 ? charts.ColorUtil
+                                                    .fromDartColor(Colors.black)
+                                                : charts.ColorUtil
                                                     .fromDartColor(
-                                                        Colors.purple)
-                                                : data['mood'] == 'Scared'
-                                                    ? charts.ColorUtil
-                                                        .fromDartColor(
-                                                            Colors.black)
-                                                    : charts.ColorUtil
-                                                        .fromDartColor(
-                                                            Colors.white),
-                          ),
-                        );
+                                                        Colors.white),
+                      ),
+                    );
 
                     return MoodDay(
                       doc.id,
                       data['image'],
-                      data['datetime'],
+                      data['date'],
+                      data['time'],
                       data['mood'],
-                      img.toList(), // problems are here
-                      name.toList(), //
+                      img.toList(),
+                      name.toList(),
                     );
                   },
                 );

@@ -25,13 +25,15 @@ showLoaderDialog(BuildContext context) {
 
 class MoodDay extends StatefulWidget {
   final String docId;
-  final String datetime;
+  final String date;
+  final String time;
   final String mood;
   final String image;
   final List<String> a;
   final List<String> b;
 
-  MoodDay(this.docId, this.image, this.datetime, this.mood, this.a, this.b);
+  MoodDay(
+      this.docId, this.image, this.date, this.time, this.mood, this.a, this.b);
 
   @override
   _MoodDayState createState() => _MoodDayState();
@@ -64,7 +66,8 @@ class _MoodDayState extends State<MoodDay> {
                 ),
                 SizedBox(width: 10),
                 Text(
-                  widget.datetime.toString() ?? 'nothing',
+                  widget.date.toString() + "  " + widget.time.toString() ??
+                      'nothing',
                   style: TextStyle(
                     fontStyle: FontStyle.normal,
                     fontWeight: FontWeight.bold,

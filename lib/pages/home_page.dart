@@ -5,6 +5,7 @@ import 'package:zenith/auth.dart';
 import 'package:zenith/pages/webview.dart';
 import 'package:get/get.dart';
 import 'dart:async';
+import 'package:webview_flutter/webview_flutter.dart';
 
 final List<Actions1> finishedActions = [
   // put it outside of the class so it is accessable from home page
@@ -29,6 +30,8 @@ class _HomePageState extends State<HomePage> {
   static TextEditingController _noteController = TextEditingController();
   static Category _selectedCategory = Category.study;
   static Difficulty _selectedDifficulty = Difficulty.easy;
+
+
 
   // at page controller, problem is start action doesnt add the action
 
@@ -102,6 +105,7 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
+
 
   Widget _activityBar(BuildContext context) {
     return Container(
@@ -201,7 +205,7 @@ class _HomePageState extends State<HomePage> {
                         height: 5,
                       ),
                       _refreshAndPoint(context),
-                      Container(width: 200, height: 200, child: Webview()),
+                      Container(width: 400, height: 400, child: Webview()),
                     ],
                   ))),
         ),

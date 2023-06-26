@@ -3,6 +3,7 @@ import 'package:zenith/pages/home_page.dart';
 import 'package:zenith/pages/schedule_page.dart'; 
 import 'package:zenith/pages/mood.dart';
 import 'package:zenith/pages/statistics.dart';
+import 'package:zenith/pages/setting.dart';
 
 
 class NavigationWrapper extends StatefulWidget {
@@ -18,7 +19,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     const SchedulePage(),
     MyMood(),
     Statistics(),
-
+    SettingPage(),
 
   ];
 

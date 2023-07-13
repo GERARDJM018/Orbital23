@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:zenith/models/actions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zenith/auth.dart';
-import 'package:zenith/pages/webview.dart';
 import 'package:get/get.dart';
 import 'dart:async';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:zenith/class/level.dart';
 
 final List<Actions1> finishedActions = [
   // put it outside of the class so it is accessable from home page
@@ -24,14 +25,110 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int updatedFinishedActions = finishedActions.length;
+  WebViewController? _animationController;
   String currentAction = 'No activity';
+  String animation = 'Base';
   static TextEditingController _titleController = TextEditingController();
   static TextEditingController _timeController = TextEditingController();
   static TextEditingController _noteController = TextEditingController();
   static Category _selectedCategory = Category.study;
   static Difficulty _selectedDifficulty = Difficulty.easy;
+  final User? user = Auth().currentUser;
+  late int _level;
+  late int _exp;
+  late int _totalExperience;
+  late Level acc;
+  late String room;
 
+  final Map<String, String> animationMap = {
+    'Base': 'https://www.youtube.com/',
+    'Sleep': 'https://gerardjm018.github.io/animationproto/sleep.html',
+    'Workout': 'https://gerardjm018.github.io/animationproto/walkAction.html',
+    'Study': ''
+  };
 
+  final Map<String, String> roomMap = {
+
+  };
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _level = 0;
+    _exp = 0;
+    _totalExperience = 0;
+    room = 'blue';
+    _loadFirestoreLevel();
+
+    _animationController = WebViewController()
+  ..setJavaScriptMode(JavaScriptMode.unrestricted)
+  ..setBackgroundColor(const Color(0x00000000))
+  ..setNavigationDelegate(
+    NavigationDelegate(
+      onProgress: (int progress) {
+        // Update loading bar.
+      },
+      onPageStarted: (String url) {},
+      onPageFinished: (String url) {},
+      onWebResourceError: (WebResourceError error) {},
+      onNavigationRequest: (NavigationRequest request) {
+        if (request.url.startsWith('https://www.youtube.com/')) {
+          return NavigationDecision.prevent;
+        }
+        return NavigationDecision.navigate;
+      },
+    ),
+  )
+  
+  ..loadRequest(Uri.parse(animationMap[animation]!));
+  }
+
+  _loadFirestoreLevel() async {
+  final snap = await FirebaseFirestore.instance
+        .collection('level')
+        .where('email', isEqualTo: user?.email ?? 'User email')
+        .withConverter(
+            fromFirestore: Level.fromFirestore, 
+            toFirestore: (level, options) => level.toFirestore())
+        .get();
+  if (snap.docs.isEmpty)  {
+      _createLevel();
+      return _loadFirestoreLevel();
+  } 
+  for (var doc in snap.docs)  { 
+    final level = doc.data();
+    final totalExp = level.experience;
+    _totalExperience = totalExp;
+    _level = (totalExp / 1000).floorToDouble().round();
+    if (totalExp >= 1000) {
+      _exp = totalExp - 1000 * _level;
+    } else  {
+      print('asd');
+      _exp = totalExp;
+    }
+    acc = level;
+    room = level.room;
+  }
+  setState(() {});
+  }
+
+  void _createLevel() async {
+    await FirebaseFirestore.instance.collection('level').add({
+      "experience": 1000,
+      "email": user?.email ?? 'User email',
+      "room": "White",
+    });
+  }
+
+  void _editExperience(int gainedExp) async  {
+    await FirebaseFirestore.instance.collection('level').doc(acc.id).update({
+      "experience": _totalExperience + gainedExp,
+      "email": user?.email ?? 'User email',
+      "room": room,
+    });
+    _loadFirestoreLevel();
+  }
 
   // at page controller, problem is start action doesnt add the action
 
@@ -127,24 +224,59 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+
   Widget _refreshButton(BuildContext context) {
-    return IconButton( onPressed: (){signOut();},icon: Icon(Icons.autorenew));
+    // return IconButton( onPressed: (){_editExperience(100);
+    // _loadFirestoreLevel();},icon: Icon(Icons.autorenew));
+    return SizedBox(
+      child: LinearProgressIndicator(value: _exp / 1000,
+              backgroundColor: const Color.fromARGB(255, 199, 200, 196),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color.fromARGB(255, 11, 122, 68)),
+              minHeight: 20,),
+      width: 300,);
   }
+  
 
   Widget _pointsWidget(BuildContext context) {
-    return Container(
-      child: Wrap(children: [Icon(Icons.currency_exchange), Text('123')]),
+    // return Container(
+    //   child: Wrap(children: [Icon(Icons.currency_exchange), Text(_level.toString())]),
+    // );
+    return Container(child: Center(child: Text(_level.toString())), height: 50, width: 50, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.amber));
+  }
+
+  void _OpenRoomOverlay() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return MyRoom();
+      },
     );
   }
 
+  Widget _refresh() {
+    return IconButton(onPressed:() { _loadFirestoreLevel();
+    setState(() {
+      animation = "Sleep";
+      _animationController!.loadRequest(Uri.parse('https://gerardjm018.github.io/animationproto/sleep.html'));
+    });
+    print(animation);}, icon: Icon(Icons.refresh));
+  }
+
+  Widget _room(BuildContext context)  {
+    return IconButton(onPressed:
+        _OpenRoomOverlay
+        , icon: Icon(Icons.shop));
+  }
+
   Widget _refreshAndPoint(BuildContext context) {
-    return Wrap(
-      spacing: getShapeWidth(context) * 2 / 3,
+    return Row(
       children: [
-        _refreshButton(context),
         _pointsWidget(
           context,
-        )
+        ),
+        _refreshButton(context),
       ],
     );
   }
@@ -205,7 +337,9 @@ class _HomePageState extends State<HomePage> {
                         height: 5,
                       ),
                       _refreshAndPoint(context),
-                      Container(width: 400, height: 400, child: Webview()),
+                      _room(context),
+                      _refresh(),
+                      Container(width: 300, height: 300, child: WebViewWidget(controller: _animationController!)),
                     ],
                   ))),
         ),
@@ -429,5 +563,79 @@ class _NewActionState extends State<NewAction> {
         ],
       ),
     );
+  }
+}
+
+class MyRoom extends StatefulWidget {
+  const MyRoom({super.key});
+
+  @override
+  State<MyRoom> createState() => _MyRoomState();
+}
+
+class _MyRoomState extends State<MyRoom> {
+  late int _level;
+  late int _exp;
+  late int _totalExperience;
+  late Level acc;
+  late String room;
+  final User? user = Auth().currentUser;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _level = 0;
+    _exp = 0;
+    _totalExperience = 0;
+    room = 'blue';
+    _loadFirestoreLevel();
+  }
+
+  _loadFirestoreLevel() async {
+  final snap = await FirebaseFirestore.instance
+        .collection('level')
+        .where('email', isEqualTo: user?.email ?? 'User email')
+        .withConverter(
+            fromFirestore: Level.fromFirestore, 
+            toFirestore: (level, options) => level.toFirestore())
+        .get();
+  for (var doc in snap.docs)  { 
+    final level = doc.data();
+    final totalExp = level.experience;
+    _totalExperience = totalExp;
+    _level = (totalExp / 1000).floorToDouble().round();
+    if (totalExp >= 1000) {
+      _exp = totalExp - 1000 * _level;
+    } else  {
+      print('asd');
+      _exp = totalExp;
+    }
+    acc = level;
+    room = level.room;
+  }
+  setState(() {});
+  }
+
+
+  void _editRoom(String appliedRoom) async  {
+    await FirebaseFirestore.instance.collection('level').doc(acc.id).update({
+      "experience": _totalExperience,
+      "email": user?.email ?? 'User email',
+      "room": appliedRoom,
+    });
+    print(room);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(title: Text("Room Customization"),),
+      body: ListView(children: [
+        Card(child: TextButton(child: Text('Blue'), 
+          onPressed: () {
+            _editRoom('White');
+            Navigator.pop(context);
+          },))
+      ],),);
   }
 }

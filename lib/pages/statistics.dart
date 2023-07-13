@@ -7,6 +7,7 @@ import 'package:zenith/components/edit_habit_box.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zenith/datetime/date_time.dart';
 import 'package:zenith/monthly_summary.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 class Statistics extends StatefulWidget {
   const Statistics({super.key});
@@ -21,11 +22,14 @@ class _StatisticsState extends State<Statistics> {
   int countCompleted = 0;
   Map<DateTime, int> heatMapDataSet = {};
   DateTime? firstLoginDate;
+  double overallCompletionPercentage = 0.0;
 
   @override
   void initState() {
     super.initState();
     retrieveFirstLoginDate();
+    calculateHeatMapData();
+    calculateHabitPercentage();
   }
 
   Future<void> retrieveFirstLoginDate() async {
@@ -85,36 +89,22 @@ class _StatisticsState extends State<Statistics> {
             percentageSnapshot.data() as Map<String, dynamic>?;
         String? percentage = data?['percentage'];
 
-        parsedPercentage = double.tryParse(percentage == null ? '0.0' : percentage)!; //correct
+        parsedPercentage =
+            double.tryParse(percentage == null ? '0.0' : percentage)!; //correct
         final percentForEachDay = <DateTime, int>{
           DateTime(year, month, day): (parsedPercentage * 10).toInt(),
         };
         print(parsedPercentage * 10);
-        heatMapDataSet.addEntries(percentForEachDay.entries);
+        heatMapDataSet.addEntries(percentForEachDay.entries); //here
 
         // Use the parsedPercentage variable as needed
       }
 
       fetchPercentageValue();
     }
+    return Future.value();
   }
 
-  /*void checkBoxTapped(bool? value, String habitId) async {
-    String userID = getUserId();
-    DocumentReference userDoc = firestore.collection("users").doc(userID);
-    DocumentReference habit = userDoc.collection("habits").doc(habitId);
-
-    DocumentSnapshot<Object?> snapshot = await habit.get();
-    if (snapshot.exists) {
-      Map<String, dynamic> habitData = snapshot.data() as Map<String, dynamic>;
-      String habitName = habitData['habit'][0];
-
-      await habit.update({
-        'habit': [habitName, value],
-      });
-      calculateHeatMapData();
-    }
-  }*/
   void checkBoxTapped(bool? value, String habitId) async {
     String userID = getUserId();
     DocumentReference userDoc = firestore.collection("users").doc(userID);
@@ -133,6 +123,7 @@ class _StatisticsState extends State<Statistics> {
 
       setState(() {}); // Trigger a rebuild of the widget
     }
+    calculateHabitPercentage();
   }
 
   void editHabit(String id, TextEditingController controller) async {
@@ -243,6 +234,7 @@ class _StatisticsState extends State<Statistics> {
   }
 
   Future<DocumentSnapshot<Object?>> getPercentageSummary(String date) async {
+    //here
     String userID = getUserId();
     DocumentReference userDoc = firestore.collection("users").doc(userID);
     DocumentReference percentageSummary =
@@ -257,11 +249,8 @@ class _StatisticsState extends State<Statistics> {
     CollectionReference habitsCollection = userDoc.collection("habits");
 
     QuerySnapshot snapshot = await habitsCollection.get();
-    // snapshot is habits
-    // habitsnapshot are all the habits
-    int x = 0;
+
     for (QueryDocumentSnapshot habitSnapshot in snapshot.docs) {
-      // there are 5 habits
       Map<String, dynamic> habitData =
           habitSnapshot.data() as Map<String, dynamic>;
 
@@ -278,16 +267,20 @@ class _StatisticsState extends State<Statistics> {
       }
     }
 
-    String percent = length == 0
-        ? '0.0'
-        : (countCompleted / length)
-            .toStringAsFixed(1); //here percent is correct
+    double completionPercentage = length == 0 ? 0.0 : (countCompleted / length);
+    double overallCompletionPercentage = double.parse(
+      completionPercentage.toStringAsFixed(1),
+    );
 
     String yyyymmdd = convertDateTimeToString(DateTime.now());
     DocumentReference percentageSummaryDoc =
         userDoc.collection("percentage_summary").doc(yyyymmdd);
     await percentageSummaryDoc.set({
-      "percentage": percent,
+      "percentage": overallCompletionPercentage.toString(),
+    });
+
+    setState(() {
+      this.overallCompletionPercentage = overallCompletionPercentage;
     });
   }
 
@@ -329,11 +322,23 @@ class _StatisticsState extends State<Statistics> {
               firstLoginDate = dateSnapshot.data;
 
               return ListView(
-                // percentage updated only when statistics is reset
                 children: [
                   MonthlySummary(
                     datasets: heatMapDataSet,
                     startDate: convertDateTimeToString(firstLoginDate!),
+                  ),
+                  LinearPercentIndicator(
+                    barRadius: Radius.circular(30),
+                    lineHeight: 15,
+                    width: 410,
+                    percent: overallCompletionPercentage,
+                    progressColor: Color.fromARGB(255, 109, 203, 167),
+                    backgroundColor: Color.fromARGB(255, 251, 251, 251),
+                    center: Text(
+                      (overallCompletionPercentage * 100).toString(),
+                      style: new TextStyle(
+                          fontSize: 12.0, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   ListView.builder(
                     shrinkWrap: true,

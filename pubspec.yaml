@@ -49,6 +49,8 @@ dependencies:
   flutter_slidable: ^1.2.0
   uuid: ^3.0.7
   webview_flutter: ^4.2.2
+  lottie: ^2.4.0
+  percent_indicator: ^4.2.3
 
 dev_dependencies:
   flutter_test:
@@ -95,6 +97,7 @@ flutter:
     - assets/eat.png
     - assets/date.png
     - assets/clean.png
+    - assets/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

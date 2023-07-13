@@ -26,7 +26,7 @@ class _SchedulePageState extends State<SchedulePage> {
   String _calendarMode = 'Month';
   late Map<DateTime, List<Event>> _events;
 
-  List<String> CalenderMode = ['Month', 'Two Weeks', 'Week']; 
+  List<String> calenderMode = ['Month', 'Two Weeks', 'Week']; 
 
   int getHashCode(DateTime key) {
     return key.day * 1000000 + key.month * 10000 + key.year;
@@ -134,7 +134,7 @@ Widget tableCalendar(BuildContext context)  {
                color: Colors.white),
               child: DropdownButton(
                     value: _calendarMode,
-                    items: CalenderMode
+                    items: calenderMode
                         .map((category) => DropdownMenuItem(
                             value: category,
                             child: Text(

@@ -1,172 +1,219 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zenith/auth.dart';
 import 'package:flutter/material.dart';
+import 'package:zenith/components/my_button.dart';
+import 'package:zenith/components/my_textfield.dart';
+import 'package:zenith/components/square_tile.dart';
 
-
-class LoginPage extends StatefulWidget  {
+class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage>  {
+class _LoginPageState extends State<LoginPage> {
+  // text editing controllers
+  final _controllerEmail = TextEditingController();
+  final _controllerPassword = TextEditingController();
   String? errorMessage = '';
   bool isLogin = true;
 
-  final TextEditingController _controllerEmail = TextEditingController();
-  final TextEditingController _controllerPassword = TextEditingController();
+  // sign user in method
+  void signUserIn() {}
 
   Future<void> signInWithEmailAndPassword() async {
+    print(11);
     try {
       await Auth().signInWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
-        );
-    } on FirebaseAuthException 
-    catch (e) {
+      );
+    } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;
       });
     }
+  }
+
+  Widget _logo() {
+    return Image.asset(
+      'lib/images/Zenith-logos_white.png',
+      scale: 5,
+    );
+  }
+
+  Widget _loginButton() {
+    return ElevatedButton(
+      style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
+      onPressed: signInWithEmailAndPassword,
+      child: Text(
+        'Login',
+        style: TextStyle(color: Colors.green[600]),
+      ),
+    );
   }
 
   Future<void> createUserWithEmailAndPassword() async {
-        try {
+    try {
       await Auth().createUserWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
-        );
-    } on FirebaseAuthException 
-    catch (e) {
+      );
+    } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;
       });
     }
   }
 
-  Widget _title() {
-    return const Text('Zenith');
-  }
-
-  Widget _entryField(String title, TextEditingController controller)  {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: title,
-      ),
-    );
-  }
-
-  Widget _errorMessage()  {
-    return Text(errorMessage == '' ? '' : 'Humm ? $errorMessage',
-        style: const TextStyle(color: Colors.red),);
-  }
-
-  Widget _submitButton()  {
-    return ElevatedButton(
-      style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
-      onPressed:
-        isLogin ? signInWithEmailAndPassword : createUserWithEmailAndPassword,
-      child: Text(
-        isLogin ? 'Login' : 'Register',
-        style: TextStyle(color: Colors.green[600]),),
+  Widget _errorMessage() {
+    print(222);
+    if (errorMessage == 'success') {
+      String email = _controllerEmail.text;
+      return Text(
+        'Reset Password Link has been sent to $email',
+        style: const TextStyle(color: Colors.black),
       );
-  }
-
-  Widget _loginOrRegisterButton() {
-    return TextButton(
-      onPressed: () {
-        setState(() {
-          isLogin = !isLogin;
-        });
-      },
-      child: Text(
-        isLogin? 'Register instead' : 'Login instead',
-        style: TextStyle(color: Colors.black),)
+    } else if (errorMessage != '') {
+      return Text(
+        'Humm ? $errorMessage',
+        style: const TextStyle(color: Colors.red),
       );
-  }
-
-  Widget _logo()  {
-    return Image.asset('lib/images/Zenith-logos_white.png',
-    scale: 5,);
-  }
-
-  Widget _resetPass() {
-    return Align(alignment:Alignment.bottomRight , child : TextButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ResetPage()));
-      },
-      child: const Text(
-        'Reset Password',
-        style: TextStyle(color: Colors.black),))
-    );
+    } else {
+      return const Text('');
+    }
   }
 
   @override
-  Widget build(BuildContext context)  {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: _title(),
-      ),
-      body: Container(
-        height: double.infinity,
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        color: Colors.green[200],
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            _logo(),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white,
+      backgroundColor: Colors.grey[300],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 50),
+
+                // logo
+                _logo(),
+
+                // welcome back you've been missed!
+                Text(
+                  'Welcome back, you\'ve been missed!',
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 16,
+                  ),
                 ),
-              height: 160,
-              padding: EdgeInsets.all(10),
-              child: Column(children: [
-                _entryField('email', _controllerEmail),
-                _entryField('password', _controllerPassword),
-              ],)
+
+                const SizedBox(height: 25),
+
+                // username textfield
+                MyTextField(
+                  controller: _controllerEmail,
+                  hintText: 'Email',
+                  obscureText: false,
+                ),
+
+                const SizedBox(height: 10),
+
+                // password textfield
+                MyTextField(
+                  controller: _controllerPassword,
+                  hintText: 'Password',
+                  obscureText: true,
+                ),
+
+                const SizedBox(height: 10),
+                _errorMessage(),
+
+                // forgot password?
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const ResetPage()));
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(color: Colors.grey[600]),
+                          )),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 25),
+
+                // sign in button
+                MyButton(
+                  text: isLogin ? 'Login' : 'Register',
+                  onTap: isLogin
+                      ? signInWithEmailAndPassword
+                      : createUserWithEmailAndPassword,
+                ),
+
+                const SizedBox(height: 50),
+                Text('aa'),
+
+                // not a member? register now
+                Row(
+                  // register now
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Not a member?',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                    const SizedBox(width: 4), //log in or register
+                    const Text(
+                      'Register now',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                )
+              ],
             ),
-            _resetPass(),
-            _errorMessage(),
-            _submitButton(),
-            _loginOrRegisterButton(),
-          ],
+          ),
         ),
       ),
-      resizeToAvoidBottomInset: false,
     );
   }
 }
 
-class ResetPage extends StatefulWidget  {
+class ResetPage extends StatefulWidget {
   const ResetPage({Key? key}) : super(key: key);
 
   @override
   State<ResetPage> createState() => _ResetPageState();
 }
 
-class _ResetPageState extends State<ResetPage>  {
+class _ResetPageState extends State<ResetPage> {
   String? errorMessage = '';
 
   final TextEditingController _controllerEmail = TextEditingController();
 
   Future<void> resetPassword() async {
     try {
-      await Auth().resetPassword( // change
+      await Auth().resetPassword(
+        // change
         email: _controllerEmail.text,
-        );
+      );
       setState(() {
-      errorMessage = 'success';
-    });
-    } on FirebaseAuthException 
-    catch (e) {
+        errorMessage = 'success';
+      });
+    } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;
       });
@@ -177,7 +224,7 @@ class _ResetPageState extends State<ResetPage>  {
     return const Text('Zenith');
   }
 
-  Widget _entryField(String title, TextEditingController controller)  {
+  Widget _entryField(String title, TextEditingController controller) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
@@ -186,75 +233,77 @@ class _ResetPageState extends State<ResetPage>  {
     );
   }
 
-  Widget _errorMessage()  {
-    if (errorMessage == 'success')  {
+  Widget _errorMessage() {
+    print(222);
+    if (errorMessage == 'success') {
       String email = _controllerEmail.text;
       return Text(
         'Reset Password Link has been sent to $email',
-        style: const TextStyle(color: Colors.black),);
+        style: const TextStyle(color: Colors.black),
+      );
     } else if (errorMessage != '') {
-      return Text('Humm ? $errorMessage',
-        style: const TextStyle(color: Colors.red),);
-    } else{
+      return Text(
+        'Humm ? $errorMessage',
+        style: const TextStyle(color: Colors.red),
+      );
+    } else {
       return const Text('');
     }
   }
 
-  Widget _submitButton()  {
+  Widget _submitButton() {
+    // change pass page
     return ElevatedButton(
       style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
       onPressed: resetPassword, //change
       child: Text(
         'reset',
-        style: TextStyle(color: Colors.green[600]),),
-      );
+        style: TextStyle(color: Colors.green[600]),
+      ),
+    );
   }
 
   Widget _loginOrRegisterButton() {
     return TextButton(
-      onPressed: () {
-        Navigator.pop(context);
-      },
-      child: Text(
-        'Login',
-        style: TextStyle(color: Colors.black),)
-      );
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        child: Text(
+          'Back to Login Page',
+          style: TextStyle(color: Colors.black),
+        ));
   }
 
-  Widget _logo()  {
-    return Image.asset('lib/images/Zenith-logos_white.png',
-    scale: 5,);
+  Widget _logo() {
+    return Image.asset(
+      'lib/images/Zenith-logos_white.png',
+      scale: 5,
+    );
   }
 
   @override
-  Widget build(BuildContext context)  {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: _title(),
-      ),
+      backgroundColor: Colors.grey[300],
       body: Container(
         height: double.infinity,
         width: double.infinity,
         padding: const EdgeInsets.all(20),
-        color: Colors.green[200],
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
             _logo(),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white,
-                ),
-              height: 80,
-              padding: EdgeInsets.fromLTRB(10,5,10,10),
-              child: Column(children: [
-                _entryField('email', _controllerEmail),
-              ],)
+            SizedBox(height: 20),
+            MyTextField(
+              controller: _controllerEmail,
+              hintText: 'Email',
+              obscureText: false,
             ),
-            _errorMessage(),
+            SizedBox(height: 10),
+            SizedBox(height: 20),
             _submitButton(),
+            SizedBox(height: 10),
+            _errorMessage(),
             _loginOrRegisterButton(),
           ],
         ),

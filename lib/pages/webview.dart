@@ -1,17 +1,32 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class Webview extends StatefulWidget {
-  const Webview({super.key});
+  final String animation;
+  final String room;
+  const Webview(
+      {Key? key,
+      required this.animation,
+      required this.room})
+      : super(key: key);
 
   @override
   State<Webview> createState() => _WebviewState();
 }
 
 class _WebviewState extends State<Webview> {
+  String _animation = 'Base';
   WebViewController? _controller;
+  Map<String, String> animationMap = {
+    'Base': 'https://www.youtube.com/',
+    'Sleep': 'https://gerardjm018.github.io/animationproto/sleep.html',
+    'Workout': 'https://gerardjm018.github.io/animationproto/walkAction.html',
+    'Study': ''
+  };
+
+  Map<String, String> roomMap = {
+
+  };
 
   @override
   void initState()  {
@@ -36,12 +51,20 @@ class _WebviewState extends State<Webview> {
       },
     ),
   )
-  ..loadRequest(Uri.parse('https://gerardjm018.github.io/OrbitalAnimation/'));
+  
+  ..loadRequest(Uri.parse(animationMap[_animation]!));
+    print(widget.animation);
   }
+
 
 
   @override
   Widget build(BuildContext context) {
-    return WebViewWidget(controller: _controller!);
+    return Row(children: [Container(child: WebViewWidget(controller: _controller!), height: 300,width: 300,), 
+    IconButton(onPressed: () {
+      setState(() {
+        _controller!.loadRequest(Uri.parse('https://gerardjm018.github.io/animationproto/sleep.html'));
+      });
+    }, icon: Icon(Icons.add))],);
   }
 }

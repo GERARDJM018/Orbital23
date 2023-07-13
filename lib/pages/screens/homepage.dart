@@ -62,7 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     var doc = docs[position];
                     var data = doc.data() as Map<String, dynamic>?;
                     count++;
-                    print(data);
 
                     if (data == null) {
                       return SizedBox.shrink();
@@ -95,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             : data['mood'] == 'Scared'
                                                 ? 6
                                                 : 7,
-                        data['date'],
+                        doc.id, // Use the document ID as the date for the mood card
                         data['mood'] == 'Angry'
                             ? charts.ColorUtil.fromDartColor(Colors.red)
                             : data['mood'] == 'Happy'
@@ -122,7 +121,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       doc.id,
                       data['image'],
                       data['date'],
-                      data['time'],
                       data['mood'],
                       img.toList(),
                       name.toList(),

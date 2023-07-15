@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   int updatedFinishedActions = finishedActions.length;
   WebViewController? _animationController;
   String currentAction = 'No activity';
-  String animation = 'Base';
+  String animation = 'Category.others';
   static TextEditingController _titleController = TextEditingController();
   static TextEditingController _timeController = TextEditingController();
   static TextEditingController _noteController = TextEditingController();
@@ -41,14 +41,17 @@ class _HomePageState extends State<HomePage> {
   late String room;
 
   final Map<String, String> animationMap = {
-    'Base': 'https://www.youtube.com/',
-    'Sleep': 'https://gerardjm018.github.io/animationproto/sleep.html',
-    'Workout': 'https://gerardjm018.github.io/animationproto/walkAction.html',
-    'Study': ''
+    'Category.others': 'others.html',
+    'Category.rest': 'sleep.html',
+    'Category.workout': 'walk.html',
+    'Category.study': 'study.html'
   };
 
   final Map<String, String> roomMap = {
-
+    'Red': 'red',
+    'White': 'white',
+    'Black': 'black',
+    'Blue': 'blue'
   };
 
   @override
@@ -80,8 +83,8 @@ class _HomePageState extends State<HomePage> {
       },
     ),
   )
-  
-  ..loadRequest(Uri.parse(animationMap[animation]!));
+  ..loadRequest(Uri.parse( 'https://gerardjm018.github.io/animationproto/' 
+    + animationMap[Category.others.toString()]!));
   }
 
   _loadFirestoreLevel() async {
@@ -122,6 +125,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _editExperience(int gainedExp) async  {
+    print(gainedExp);
     await FirebaseFirestore.instance.collection('level').doc(acc.id).update({
       "experience": _totalExperience + gainedExp,
       "email": user?.email ?? 'User email',
@@ -178,11 +182,53 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       currentAction = 'No activity';
       progressPercentage = 0.0;
+      TimerController timerController = Get.find<TimerController>();
+      timerController.startTimer(0);
+      startProgressTimer(0);
+      progressPercentage = 0;
+      _animationController!.loadRequest(Uri.parse( 'https://gerardjm018.github.io/animationproto/' 
+      + roomMap[room]! + animationMap[Category.others.toString()]!));
+    });
+    _titleController.clear();
+  }
+
+  int _categoryToInt(Category category) {
+    if (category == Category.rest)  {
+      return 0;
+    } else if (category == Category.study)  {
+      return 1;
+    } else {
+      return 1;
+    }
+  }
+
+  int _dificultyToInt(Difficulty difficulty)  {
+    if (difficulty == Difficulty.easy)  {
+      return 1;
+    } else if (difficulty == Difficulty.hard) {
+      return 3;
+    } else {
+      return 2;
+    }
+  }
+
+  void _finishActivity() {
+    print('cast');
+    int selectedCat = _categoryToInt(finishedActions[updatedFinishedActions].category);
+    int selectedDif = _dificultyToInt(finishedActions[updatedFinishedActions].difficulty);
+    int selectedDur = finishedActions[updatedFinishedActions].duration;
+    _editExperience(selectedDur*selectedDif*selectedCat);
+    setState(() {
+      currentAction = 'No activity';
+      progressPercentage = 0.0;
+      _animationController!.loadRequest(Uri.parse( 'https://gerardjm018.github.io/animationproto/' 
+      + roomMap[room]! + animationMap[Category.others.toString()]!));
     });
     _titleController.clear();
   }
 
   void _addActions(Actions1 actions) {
+    print(room);
     setState(() {
       currentAction = 'loading';
       progressPercentage = 0;
@@ -190,6 +236,9 @@ class _HomePageState extends State<HomePage> {
       TimerController timerController = Get.find<TimerController>();
       timerController.startTimer(actions.duration);
       startProgressTimer(actions.duration);
+      _animationController!.loadRequest(Uri.parse( 'https://gerardjm018.github.io/animationproto/' 
+      + roomMap[room]! + animationMap[actions.category.toString()]!));
+
     });
   }
 
@@ -258,8 +307,13 @@ class _HomePageState extends State<HomePage> {
   Widget _refresh() {
     return IconButton(onPressed:() { _loadFirestoreLevel();
     setState(() {
-      animation = "Sleep";
-      _animationController!.loadRequest(Uri.parse('https://gerardjm018.github.io/animationproto/sleep.html'));
+      if (currentAction == 'loading' || currentAction == 'finished')  {      
+        _animationController!.loadRequest(Uri.parse( 'https://gerardjm018.github.io/animationproto/' 
+      + roomMap[room]! + animationMap[finishedActions[updatedFinishedActions].category.toString()]!));
+      } else {
+        _animationController!.loadRequest(Uri.parse( 'https://gerardjm018.github.io/animationproto/' 
+      + roomMap[room]! + animationMap[Category.others.toString()]!));
+      }
     });
     print(animation);}, icon: Icon(Icons.refresh));
   }
@@ -352,7 +406,8 @@ class _HomePageState extends State<HomePage> {
             } else if(currentAction == 'loading') {
               _cancelActivity();
             } else {
-              _cancelActivity();
+              print('finish');
+              _finishActivity();
             }
           },
           child: currentAction == 'No activity' ? Icon(Icons.add) : currentAction == 'loading' ? Icon(Icons.cancel) : Icon(Icons.check),
@@ -627,15 +682,26 @@ class _MyRoomState extends State<MyRoom> {
     print(room);
   }
 
+  Widget _cardRoom(String roomStyle, int levelC)  {
+    if (_level >= levelC)  {
+      return Card(child: Container( child: TextButton(child: Text(roomStyle), 
+          onPressed: () {
+            _editRoom(roomStyle);
+            Navigator.pop(context);
+          },), height: 70,));      
+    } else {
+      return Card(child: Container(child: Center( child: Text('Unlocked at level' + levelC.toString())), height: 70,));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(appBar: AppBar(title: Text("Room Customization"),),
       body: ListView(children: [
-        Card(child: TextButton(child: Text('Blue'), 
-          onPressed: () {
-            _editRoom('White');
-            Navigator.pop(context);
-          },))
+        _cardRoom('White', 1),
+        _cardRoom('Blue', 10),
+        _cardRoom('Red', 20),
+        _cardRoom('Black', 30),
       ],),);
   }
 }

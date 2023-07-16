@@ -17,7 +17,7 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> {
-  final User? user = Auth().currentUser;
+  final User? user = Auth(FirebaseAuth.instance).currentUser;
   late DateTime _focusedDay;
   late DateTime _firstDay;
   late DateTime _lastDay;

@@ -19,6 +19,15 @@ final List<Actions1> finishedActions = [
 ];
 
 class HomePage extends StatefulWidget {
+
+  FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+
+  FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  HomePage(this._firebaseAuth, this._firestore);
+
+
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -33,7 +42,7 @@ class _HomePageState extends State<HomePage> {
   static TextEditingController _noteController = TextEditingController();
   static Category _selectedCategory = Category.study;
   static Difficulty _selectedDifficulty = Difficulty.easy;
-  final User? user = Auth().currentUser;
+  final User? user = Auth(FirebaseAuth.instance).currentUser;
   late int _level;
   late int _exp;
   late int _totalExperience;
@@ -152,9 +161,6 @@ class _HomePageState extends State<HomePage> {
     _titleController = title;
   }
 
-  Future<void> signOut() async{
-    await Auth().signOut();
-  }
 
   double progressPercentage =
       0; // 1st bug+ the timer keeps getting faster 2nd = the bar doesnt reset -> fixed
@@ -305,7 +311,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _refresh() {
-    return IconButton(onPressed:() { _loadFirestoreLevel();
+    return IconButton(onPressed:() { 
+    _loadFirestoreLevel();
+    print('hi ' + user.toString());
     setState(() {
       if (currentAction == 'loading' || currentAction == 'finished')  {      
         _animationController!.loadRequest(Uri.parse( 'https://gerardjm018.github.io/animationproto/' 
@@ -634,7 +642,7 @@ class _MyRoomState extends State<MyRoom> {
   late int _totalExperience;
   late Level acc;
   late String room;
-  final User? user = Auth().currentUser;
+  final User? user = Auth(FirebaseAuth.instance).currentUser;
 
   @override
   void initState() {

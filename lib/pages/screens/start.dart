@@ -248,7 +248,7 @@ class _StartPageState extends State<StartPage> {
         child: Column(
           children: <Widget>[
             SizedBox(
-              height: 25,
+              height: MediaQuery.of(context).size.height * 0.06,
             ),
             Row(
               children: [
@@ -268,21 +268,14 @@ class _StartPageState extends State<StartPage> {
                         radius: 27,
                         child: CircleAvatar(
                           child: Icon(Icons.dashboard,
-                              color: Colors.green, size: 30),
+                              color: const Color.fromARGB(255, 56, 62, 56),
+                              size: 30),
                           radius: 25,
                           backgroundColor: Colors.white,
                         ),
                         backgroundColor: Colors.green,
                       ),
                       SizedBox(height: 2.5),
-                      Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.green,
-                          fontSize: 15,
-                        ),
-                      )
                     ],
                   ),
                 ),
@@ -290,9 +283,12 @@ class _StartPageState extends State<StartPage> {
               ],
             ),
             Container(height: 150, child: currentLottie),
+            SizedBox(
+              height: 10,
+            ),
             Container(
-              width: 350,
-              height: 100,
+              width: MediaQuery.of(context).size.width * 0.9,
+              height: 80,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(
                     20), // Adjust the radius as per your preference
@@ -454,14 +450,6 @@ class _StartPageState extends State<StartPage> {
                           backgroundColor: Color.fromARGB(255, 3, 124, 58),
                         ),
                         backgroundColor: Colors.white,
-                      ),
-                      Text(
-                        'Save',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: const Color.fromARGB(255, 37, 63, 84),
-                          fontSize: 20,
-                        ),
                       ),
                     ],
                   ),

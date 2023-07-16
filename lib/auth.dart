@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Auth {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+
+  Auth(this._firebaseAuth);
 
   User? get currentUser => _firebaseAuth.currentUser;
 
@@ -16,6 +18,7 @@ class Auth {
       email: email,
       password: password,
     );
+    print(currentUser);
 
     // Check if it's the first login
   }

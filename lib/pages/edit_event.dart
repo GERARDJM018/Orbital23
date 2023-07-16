@@ -22,7 +22,7 @@ class EditEvent extends StatefulWidget {
 
 class _EditEventState extends State<EditEvent> {
   late String _type;
-  final User? user = Auth().currentUser;
+  final User? user = Auth(FirebaseAuth.instance).currentUser;
   late DateTime _selectedDate;
   late TextEditingController _titleController;
   late TextEditingController _descController;

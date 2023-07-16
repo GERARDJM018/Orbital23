@@ -19,7 +19,7 @@ class _LoginPageState extends State<LoginPage>  {
 
   Future<void> signInWithEmailAndPassword() async {
     try {
-      await Auth().signInWithEmailAndPassword(
+      await Auth(FirebaseAuth.instance).signInWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
         );
@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage>  {
 
   Future<void> createUserWithEmailAndPassword() async {
         try {
-      await Auth().createUserWithEmailAndPassword(
+      await Auth(FirebaseAuth.instance).createUserWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
         );
@@ -159,7 +159,7 @@ class _ResetPageState extends State<ResetPage>  {
 
   Future<void> resetPassword() async {
     try {
-      await Auth().resetPassword( // change
+      await Auth(FirebaseAuth.instance).resetPassword( // change
         email: _controllerEmail.text,
         );
       setState(() {

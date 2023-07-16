@@ -148,16 +148,17 @@ class _EditHabitBoxState extends State<EditHabitBox> {
               ),
             ),
             actions: [
+              
+              MaterialButton(
+                onPressed: widget.onCancel,
+                child: Text('Cancel', style: TextStyle(color: Colors.white)),
+                color: Colors.black,
+              ),
               MaterialButton(
                 onPressed: widget.onSave,
                 child: Text('Save', style: TextStyle(color: Colors.white)),
                 color: Colors.black,
               ),
-              MaterialButton(
-                onPressed: widget.onCancel,
-                child: Text('Cancel', style: TextStyle(color: Colors.white)),
-                color: Colors.black,
-              )
             ],
           );
         }

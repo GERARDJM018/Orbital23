@@ -20,7 +20,7 @@ class AddEvent extends StatefulWidget {
 }
 
 class _AddEventState extends State<AddEvent> {
-  final User? user = Auth().currentUser;
+  final User? user = Auth(FirebaseAuth.instance).currentUser;
   late DateTime _selectedDate;
   static String _type = 'Class';
   final _titleController = TextEditingController();

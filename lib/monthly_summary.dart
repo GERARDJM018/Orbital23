@@ -28,16 +28,16 @@ class MonthlySummary extends StatelessWidget {
         scrollable: true,
         size: 30,
         colorsets: const {
-          1: Color.fromARGB(20, 2, 179, 8),
-          2: Color.fromARGB(40, 2, 179, 8),
-          3: Color.fromARGB(60, 2, 179, 8),
-          4: Color.fromARGB(80, 2, 179, 8),
-          5: Color.fromARGB(100, 2, 179, 8),
-          6: Color.fromARGB(120, 2, 179, 8),
-          7: Color.fromARGB(150, 2, 179, 8),
-          8: Color.fromARGB(180, 2, 179, 8),
-          9: Color.fromARGB(220, 2, 179, 8),
-          10: Color.fromARGB(255, 2, 179, 8),
+          1: Color.fromARGB(255, 255, 255, 255), // White
+          2: Color.fromARGB(240, 255, 216, 0), // Lightest orange
+          3: Color.fromARGB(220, 255, 165, 0), // Light orange
+          4: Color.fromARGB(200, 255, 140, 0),
+          5: Color.fromARGB(180, 255, 127, 0),
+          6: Color.fromARGB(160, 255, 102, 0), // Medium orange
+          7: Color.fromARGB(140, 255, 97, 0),
+          8: Color.fromARGB(120, 255, 85, 0),
+          9: Color.fromARGB(100, 255, 69, 0), // Dark orange
+          10: Color.fromARGB(80, 255, 50, 0), // Darkest orange
         },
         onClick: (value) {
           ScaffoldMessenger.of(context)

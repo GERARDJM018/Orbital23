@@ -43,6 +43,7 @@ class Auth {
         DateTime now = DateTime.now();
         await userDoc.set({
           'firstLoginDate': now,
+          'email': email,
         });
       } else {
         // The user document exists, check if 'firstLoginDate' field is present

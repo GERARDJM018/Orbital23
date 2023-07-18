@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:zenith/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class AddEvent extends StatefulWidget {
   final DateTime firstDate;
   final DateTime lastDate;
   final DateTime? selectedDate;
-  const AddEvent(
-      {Key? key,
-      required this.firstDate,
-      required this.lastDate,
-      this.selectedDate})
-      : super(key: key);
+
+  const AddEvent({
+    Key? key,
+    required this.firstDate,
+    required this.lastDate,
+    this.selectedDate,
+  }) : super(key: key);
 
   @override
   State<AddEvent> createState() => _AddEventState();
@@ -29,120 +29,184 @@ class _AddEventState extends State<AddEvent> {
   final _startMController = TextEditingController();
   final _endHController = TextEditingController();
   final _endMController = TextEditingController();
-  List<String> TypeMode = ['Class', 'Test', 'Refreshing', 'Assignment', 'Others']; 
-  
+  List<String> TypeMode = [
+    'Class',
+    'Test',
+    'Refreshing',
+    'Assignment',
+    'Others'
+  ];
+
   @override
   void initState() {
     super.initState();
     _selectedDate = widget.selectedDate ?? DateTime.now();
   }
 
+  void _selectTime(TextEditingController controller) async {
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (pickedTime != null) {
+      final formattedTime =
+          '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
+      controller.text = formattedTime;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-			appBar: AppBar(title: const Text("Add Event")),
+      appBar: AppBar(title: const Text("Add Event")),
       body: ListView(
-				padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         children: [
-          InputDatePickerFormField(
-            firstDate: widget.firstDate,
-            lastDate: widget.lastDate,
-            initialDate: _selectedDate,
-            onDateSubmitted: (date) {
-              setState(() {
-                _selectedDate = date;
-              });
-            },
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.grey, // Outline color
+                width: 2, // Outline width
+              ),
+              borderRadius: BorderRadius.circular(8), // Rounded corners
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: TextField(
+                controller: _titleController,
+                maxLines: 1,
+                decoration: InputDecoration(
+                  hintText: 'Enter Event Title',
+                  border: InputBorder.none, // Hide the default underline
+                ),
+              ),
+            ),
           ),
-          TextField(
-            controller: _titleController,
-            maxLines: 1,
-            decoration: const InputDecoration(labelText: 'title'),
+          SizedBox(
+            height: 8,
           ),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-            Text('Start: ', textScaleFactor: 1.2,),
-            Container(
-              color: Colors.white,
-              width: 20,
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "01",
-                  counterText: "",
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey, // Outline color
+                      width: 2, // Outline width
+                    ),
+                    borderRadius: BorderRadius.circular(8), // Rounded corners
+                  ),
+                  child: TextField(
+                    controller: _startHController,
+                    decoration: InputDecoration(
+                      labelText: 'Start Time',
+                      border: InputBorder.none, // Hide the default underline
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    readOnly: true,
+                    onTap: () => _selectTime(_startHController),
+                  ),
                 ),
-                controller: _startHController,
-                maxLength: 2,
-                keyboardType: TextInputType.number,
-              )),
-            Text(':'),
-            SizedBox(
-              width: 20,
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "20",
-                  counterText: "",
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey, // Outline color
+                      width: 2, // Outline width
+                    ),
+                    borderRadius: BorderRadius.circular(8), // Rounded corners
+                  ),
+                  child: TextField(
+                    controller: _endHController,
+                    decoration: InputDecoration(
+                      labelText: 'End Time',
+                      border: InputBorder.none, // Hide the default underline
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    readOnly: true,
+                    onTap: () => _selectTime(_endHController),
+                  ),
                 ),
-                controller: _startMController,
-                maxLength: 2,
-                keyboardType: TextInputType.number,
-              )),
-          ]),
-                    Row(
-            children: [
-            Text('End: ', textScaleFactor: 1.2,),
-            Container(
-              color: Colors.white,
-              width: 20,
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "02",
-                  counterText: "",
+              ),
+            ],
+          ),
+          SizedBox(height: 9),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.grey,
+                width: 2,
+              ),
+            ),
+            child: DropdownButton(
+              value: _type,
+              items: TypeMode.map(
+                (category) => DropdownMenuItem(
+                  value: category,
+                  child: Text(
+                    category,
+                  ),
                 ),
-                controller: _endHController,
-                maxLength: 2,
-                keyboardType: TextInputType.number,
-              )),
-            Text(':'),
-            SizedBox(
-              width: 20,
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "20",
-                  counterText: "",
-                ),
-                controller: _endMController,
-                maxLength: 2,
-                keyboardType: TextInputType.number,
-              )),
-          ]),
-          SizedBox(height: 10,),
-          DropdownButton(
-            value: _type,
-            items: TypeMode
-              .map((category) => DropdownMenuItem(
-                value: category,
-                child: Text(
-                  category,
-              )))
-              .toList(),
-            onChanged: (value){
-              if (value == null) {
-                return;
-              }
-              setState(() {
-                _type = value;
-              });
-            }),
+              ).toList(),
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _type = value;
+                });
+              },
+              isDense: false,
+              itemHeight: 50,
+              dropdownColor: Colors.white,
+            ),
+          ),
+          SizedBox(height: 16),
           TextField(
             controller: _descController,
             maxLines: 5,
-            decoration: const InputDecoration(labelText: 'description'),
+            decoration: InputDecoration(
+              labelText: 'Description',
+              border: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Colors.orange, // Set the border color to orange
+                  width: 2.0, // Set the border width
+                ),
+                borderRadius: BorderRadius.circular(
+                    8), // Add rounded corners to the border
+              ),
+              // Optional: You can add padding to the input field if desired
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
           ),
+          SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
               _addEvent();
             },
-            child: const Text("Save"),
+            style: ElevatedButton.styleFrom(
+              primary: Colors.orange, // Set the background color
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8), // Rounded corners
+              ),
+              padding: EdgeInsets.symmetric(
+                  horizontal: 24, vertical: 12), // Add padding
+            ),
+            child: Text(
+              "Save",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white, // Set the text color
+              ),
+            ),
           ),
         ],
       ),
@@ -150,11 +214,11 @@ class _AddEventState extends State<AddEvent> {
   }
 
   DateTime _newTime(DateTime dTime) {
-    return DateTime(dTime.year, dTime.month, dTime.day, 0,0,0,0,0);
+    return DateTime(dTime.year, dTime.month, dTime.day, 0, 0, 0, 0, 0);
   }
 
   void _addEvent() async {
-		// save event to Firestore
+    // save event to Firestore
     final title = _titleController.text;
     final description = _descController.text;
     final startH = _startHController.text;
@@ -164,12 +228,12 @@ class _AddEventState extends State<AddEvent> {
     final type = _type;
     if (title.isEmpty) {
       print('title cannot be empty');
-	  	// you can use snackbar to display erro to the user
+      // you can use snackbar to display error to the user
       return;
     }
     if (startH.isEmpty || startM.isEmpty || endH.isEmpty || endM.isEmpty) {
       print('time cannot be empty');
-	  	// you can use snackbar to display erro to the user
+      // you can use snackbar to display error to the user
       return;
     }
     await FirebaseFirestore.instance.collection('events').add({
@@ -183,8 +247,8 @@ class _AddEventState extends State<AddEvent> {
       "type": type,
       "email": user?.email ?? 'User email',
     });
-    if(mounted) {
-		  Navigator.pop<bool>(context, true);
-   }
+    if (mounted) {
+      Navigator.pop<bool>(context, true);
+    }
   }
 }

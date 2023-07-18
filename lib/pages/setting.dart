@@ -1,37 +1,71 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zenith/auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SettingPage extends StatelessWidget {
-  const SettingPage({Key? key});
+class SettingPage extends StatefulWidget {
+  const SettingPage({Key? key}) : super(key: key);
+
+  @override
+  _SettingPageState createState() => _SettingPageState();
+}
+
+class _SettingPageState extends State<SettingPage> {
+  int numberOfMoodsSaved = 0;
+  String email = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+    calculateEmotions();
+  }
+
+  Future<void> fetchData() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      DocumentSnapshot<Map<String, dynamic>> userSnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .get();
+
+      if (userSnapshot.exists) {
+        String userId = currentUser.uid;
+        String userEmail = userSnapshot.get('email').toString();
+
+        setState(() {
+          email = userEmail;
+        });
+      } else {
+        // User document doesn't exist, handle the error case
+        setState(() {
+          email = 'User not found';
+        });
+      }
+    }
+  }
 
   Future<void> signOut() async {
     await Auth(FirebaseAuth.instance).signOut();
   }
 
+  void calculateEmotions() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('user_moods').get();
+
+    setState(() {
+      numberOfMoodsSaved = snapshot.size;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Get user data (replace this with your own logic to fetch the user data)
-    String email = 'ajneanjfn@gmail.com';
     int experience = 1000;
     String roomColor = 'White';
-    int numberOfMoodsSaved =
-        2; // Replace with the actual number of moods saved for the user
-
     int numberOfHabitsDone = 0; // Initialize the count to 0
 
     // Update the count based on the habit completion status from the database
-    bool habit1Done =
-        false; // Replace with the actual completion status of habit 1
-    bool habit2Done =
-        false; // Replace with the actual completion status of habit 2
-
-    if (habit1Done) {
-      numberOfHabitsDone++;
-    }
-    if (habit2Done) {
-      numberOfHabitsDone++;
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -81,7 +115,7 @@ class SettingPage extends StatelessWidget {
               signOut();
             },
             style: ElevatedButton.styleFrom(
-              primary: Colors.red,
+              primary: Colors.orange,
               onPrimary: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
               shape: RoundedRectangleBorder(

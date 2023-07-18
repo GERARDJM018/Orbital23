@@ -282,7 +282,12 @@ class _StartPageState extends State<StartPage> {
                 SizedBox(width: 10),
               ],
             ),
-            Container(height: 150, child: currentLottie),
+            Expanded(
+              child: Container(
+                height: 150,
+                child: currentLottie,
+              ),
+            ),
             SizedBox(
               height: 10,
             ),
@@ -290,8 +295,7 @@ class _StartPageState extends State<StartPage> {
               width: MediaQuery.of(context).size.width * 0.9,
               height: 80,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                    20), // Adjust the radius as per your preference
+                borderRadius: BorderRadius.circular(20),
                 color: Color.fromARGB(255, 205, 225, 231),
                 border: Border.all(
                   color: Colors.black,
@@ -313,13 +317,15 @@ class _StartPageState extends State<StartPage> {
                         text: '  $numberOfDays',
                         style: TextStyle(
                           fontSize: 30,
-                          // Increase the font size for the number of days
                         ),
                       ),
                       TextSpan(
-                          text: '  days in a row',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.normal)),
+                        text: '  days in a row',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -409,52 +415,59 @@ class _StartPageState extends State<StartPage> {
               ),
             ),
             SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pushNamed('/home_screen');
-                  },
-                  child: Column(
-                    children: [],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () async {
-                    setState(() {
-                      moodCard = Provider.of<MoodCard>(context, listen: false);
-                      moodCard.activities.clear();
-                      selectedActivities.clear();
-                      moodCard.addPlace(
-                        DateTime.now().toString(),
-                        mood!,
-                        image!,
-                        moodCard.activityimage.toSet().join('_'),
-                        moodCard.activityname.toSet().join('_'),
-                      );
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.8,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  GestureDetector(
+                    onTap: () {
                       Navigator.of(context).pushNamed('/home_screen');
-                    });
-                    calculateConsecutiveDays();
-                    calculateWeekly();
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        child: CircleAvatar(
-                          child: Icon(Icons.save_alt,
-                              color: Colors.white, size: 30),
-                          radius: 30,
-                          backgroundColor: Color.fromARGB(255, 3, 124, 58),
-                        ),
-                        backgroundColor: Colors.white,
-                      ),
-                    ],
+                    },
+                    child: Column(
+                      children: [],
+                    ),
                   ),
-                ),
-              ],
+                  GestureDetector(
+                    onTap: () async {
+                      setState(() {
+                        moodCard =
+                            Provider.of<MoodCard>(context, listen: false);
+                        moodCard.activities.clear();
+                        selectedActivities.clear();
+                        moodCard.addPlace(
+                          DateTime.now().toString(),
+                          mood!,
+                          image!,
+                          moodCard.activityimage.toSet().join('_'),
+                          moodCard.activityname.toSet().join('_'),
+                        );
+                        Navigator.of(context).pushNamed('/home_screen');
+                      });
+                      calculateConsecutiveDays();
+                      calculateWeekly();
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          child: CircleAvatar(
+                            child: Icon(Icons.save_alt,
+                                color: Colors.white, size: 30),
+                            radius: 30,
+                            backgroundColor: Colors.orange,
+                          ),
+                          backgroundColor: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 15,
             )
           ],
         ),

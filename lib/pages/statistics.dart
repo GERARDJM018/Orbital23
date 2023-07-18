@@ -177,24 +177,6 @@ class _StatisticsState extends State<Statistics> {
 
   final _newHabitNameController = TextEditingController();
 
-  /* 
- void saveNewHabit2() async {
-    String userID = getUserId();
-    DocumentReference userDoc = firestore.collection("users").doc(userID);
-    CollectionReference habits = userDoc.collection("habits");
-
-    await habits.add({
-      "habit": [_newHabitNameController.text, false],
-    });
-    _newHabitNameController.clear();
-
-    // pop dialog box
-    Navigator.of(context).pop();
-    await calculateHeatMapData();
-
-    setState(() {});
-  }*/
-
   void saveNewHabit2(BuildContext context) async {
     String userID = getUserId();
     DocumentReference userDoc = firestore.collection("users").doc(userID);
@@ -215,27 +197,6 @@ class _StatisticsState extends State<Statistics> {
       // Perform any necessary state updates
     });
   }
-
-  /*void saveNewHabit2(BuildContext context) async {
-    String userID = getUserId();
-    DocumentReference userDoc = firestore.collection("users").doc(userID);
-    CollectionReference habits = userDoc.collection("habits");
-
-    await habits.add({
-      "habit": [_newHabitNameController.text, false],
-    });
-    _newHabitNameController.clear();
-
-    // Pop dialog box
-    Navigator.of(context).pop();
-
-    await calculateHeatMapData();
-    print(context);
-
-    setState(() {
-      // Perform any necessary state updates
-    });
-  }*/
 
   void cancelNewHabit() {
     // clear textfield
@@ -340,11 +301,6 @@ class _StatisticsState extends State<Statistics> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[300],
-      floatingActionButton: MyFloatingActionButton(
-        onPressed: () {
-          createNewHabit(context);
-        },
-      ),
       body: StreamBuilder<QuerySnapshot<Object?>>(
         stream: streamData(),
         builder: (context, snapshot) {
@@ -368,49 +324,72 @@ class _StatisticsState extends State<Statistics> {
               firstLoginDate = dateSnapshot.data;
 
               return SafeArea(
-                child: ListView(
+                child: Stack(
                   children: [
-                    MonthlySummary(
-                      datasets: heatMapDataSet,
-                      startDate: convertDateTimeToString(
-                          firstLoginDate!.subtract(Duration(days: 100))),
+                    ListView(
+                      children: [
+                        MonthlySummary(
+                          datasets: heatMapDataSet,
+                          startDate: convertDateTimeToString(
+                              firstLoginDate!.subtract(Duration(days: 100))),
+                        ),
+                        Container(
+                          width: MediaQuery.of(context).size.width,
+                          child: LinearPercentIndicator(
+                            barRadius: Radius.circular(5),
+                            lineHeight: 20,
+                            width: MediaQuery.of(context).size.width,
+                            percent: overallCompletionPercentage,
+                            progressColor: Color.fromARGB(255, 109, 203, 167),
+                            backgroundColor: Color.fromARGB(255, 251, 251, 251),
+                            center: Text(
+                              (overallCompletionPercentage * 100).toString(),
+                              style: new TextStyle(
+                                fontSize: 12.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: listAllhabits.length,
+                          itemBuilder: (context, index) {
+                            return HabitTile(
+                              habitName:
+                                  "${(listAllhabits[index].data() as Map<String, dynamic>)["habit"][0]}"
+                                      .toString(),
+                              habitCompleted: (listAllhabits[index].data()
+                                  as Map<String, dynamic>)["habit"][1],
+                              onChanged: (value) => checkBoxTapped(
+                                  value, listAllhabits[index].id),
+                              settingsTapped: (context) =>
+                                  openHabitSettings(listAllhabits[index].id),
+                              deleteTapped: (context) =>
+                                  deleteHabit(listAllhabits[index].id),
+                              habitId: listAllhabits[index].id,
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    Container(
-                      width: MediaQuery.of(context).size.width,
-                      child: LinearPercentIndicator(
-                        barRadius: Radius.circular(5),
-                        lineHeight: 20,
-                        width: MediaQuery.of(context).size.width,
-                        percent: overallCompletionPercentage,
-                        progressColor: Color.fromARGB(255, 109, 203, 167),
-                        backgroundColor: Color.fromARGB(255, 251, 251, 251),
-                        center: Text(
-                          (overallCompletionPercentage * 100).toString(),
-                          style: new TextStyle(
-                              fontSize: 12.0, fontWeight: FontWeight.bold),
+                    Positioned(
+                      bottom:
+                          20.0, // Adjust the value to position the button as per your requirement
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.orange,
+                          onPressed: () {
+                            createNewHabit(context);
+                          },
+                          child: Icon(
+                            Icons.add,
+                          ),
                         ),
                       ),
-                    ),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: listAllhabits.length,
-                      itemBuilder: (context, index) {
-                        return HabitTile(
-                          habitName:
-                              "${(listAllhabits[index].data() as Map<String, dynamic>)["habit"][0]}"
-                                  .toString(),
-                          habitCompleted: (listAllhabits[index].data()
-                              as Map<String, dynamic>)["habit"][1],
-                          onChanged: (value) =>
-                              checkBoxTapped(value, listAllhabits[index].id),
-                          settingsTapped: (context) =>
-                              openHabitSettings(listAllhabits[index].id),
-                          deleteTapped: (context) =>
-                              deleteHabit(listAllhabits[index].id),
-                          habitId: listAllhabits[index].id,
-                        );
-                      },
                     ),
                   ],
                 ),

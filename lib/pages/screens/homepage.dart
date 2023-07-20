@@ -116,7 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         Colors.white),
                       ),
                     );
-
+                    if (doc.id == null) {
+                      print('the problem is with the id');
+                    }
                     return MoodDay(
                       doc.id,
                       data['image'],

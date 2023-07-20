@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+//394
+
 //https://lottiefiles.com/search?q=happy+emotion&category=animations&animations-page=3
 
 class StartPage extends StatefulWidget {
@@ -17,6 +19,9 @@ class StartPage extends StatefulWidget {
 
 class _StartPageState extends State<StartPage> {
   int numberOfDays = 0;
+  String? selectedMood;
+  String? selectedMoodImage;
+  bool canSaveMood = false;
 
   @override
   void initState() {
@@ -48,8 +53,6 @@ class _StartPageState extends State<StartPage> {
     for (var moodDoc in weeklyMood) {
       String Mood = moodDoc['mood'];
       moodString.add(Mood);
-      print(12345);
-      print(Mood);
     }
     int happy = 0;
     int sad = 0;
@@ -139,7 +142,9 @@ class _StartPageState extends State<StartPage> {
     uniqueDates.sort();
 
     int consecutiveDays = 1;
-    if (DateTime.parse(uniqueDates[uniqueDates.length -
+    if (uniqueDates.length == 0) {
+      consecutiveDays = 0;
+    } else if (DateTime.parse(uniqueDates[uniqueDates.length -
             1]) == // check that the previous day is not empty
         _formatDate(DateTime.now().add(const Duration(days: -1)))) {
       print(_formatDate(DateTime.now().add(const Duration(days: -1))));
@@ -191,27 +196,32 @@ class _StartPageState extends State<StartPage> {
   String? image = '';
 
   int ontapcount = 0;
-  void toggleActivitySelection(int index) {
-    // Check if the activity is already selected
+  void _toggleActivitySelection(int index) {
     bool isSelected = act[index].selected;
-
-    // Check if the number of selected activities is already 5
     bool reachedMaxActivities = selectedActivities.length >= 5;
 
     setState(() {
       if (!isSelected && !reachedMaxActivities) {
-        // If the activity is not selected and not reached max limit, select it
         act[index].selected = true;
         selectedActivities.add(act[index]);
         Provider.of<MoodCard>(context, listen: false).add(act[index]);
       } else if (isSelected) {
-        // If the activity is already selected, deselect it
         act[index].selected = false;
         selectedActivities.remove(act[index]);
         Provider.of<MoodCard>(context, listen: false).delete(act[index]);
       }
-      // Otherwise, do nothing as the max limit is reached
+
+      // Update the mood and activity selections
+      bool moodSelected = moods.any((mood) => mood.iselected);
+      bool activitiesSelected = selectedActivities.isNotEmpty;
+      canSaveMood = moodSelected && activitiesSelected;
+
+      // Reset the ontapcount when no mood is selected
+      if (!moodSelected) {
+        ontapcount = 0;
+      }
     });
+
     calculateConsecutiveDays();
     calculateWeekly();
   }
@@ -250,37 +260,53 @@ class _StartPageState extends State<StartPage> {
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.06,
             ),
-            Row(
-              children: [
-                Spacer(),
-                Text(
-                  "MOODFIT",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(width: 75),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pushNamed('/home_screen');
-                  },
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 27,
-                        child: CircleAvatar(
-                          child: Icon(Icons.dashboard,
-                              color: const Color.fromARGB(255, 56, 62, 56),
-                              size: 30),
-                          radius: 25,
-                          backgroundColor: Colors.white,
-                        ),
-                        backgroundColor: Colors.green,
+            Container(
+              // Add padding for better spacing
+              child: Row(
+                children: [
+                  Expanded(
+                    flex:
+                        1, // Flex factor 1 to occupy the remaining space on the left
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pushNamed('/home_screen');
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(
+                            radius: 27,
+                            child: CircleAvatar(
+                              child: Icon(Icons.dashboard,
+                                  color: const Color.fromARGB(255, 56, 62, 56),
+                                  size: 30),
+                              radius: 25,
+                              backgroundColor: Colors.white,
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                          SizedBox(height: 2.5),
+                        ],
                       ),
-                      SizedBox(height: 2.5),
-                    ],
+                    ),
                   ),
-                ),
-                SizedBox(width: 10),
-              ],
+                  Expanded(
+                    flex:
+                        2, // Flex factor 2 to occupy the remaining space in the middle
+                    child: Text(
+                      "MOODFIT",
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Expanded(
+                    flex:
+                        1, // Flex factor 1 to occupy the remaining space on the right
+                    child: Container(),
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: Container(
@@ -363,15 +389,23 @@ class _StartPageState extends State<StartPage> {
                               setState(() {
                                 mood = moods[index].name;
                                 image = moods[index].moodimage;
+                                selectedMood = moods[index].name;
+                                selectedMoodImage = moods[index].moodimage;
                                 moods[index].iselected = true;
                                 ontapcount = ontapcount + 1;
+                                if (selectedActivities.isNotEmpty) {
+                                  canSaveMood = true;
+                                }
                               }),
                             }
                           else if (moods[index].iselected)
                             {
                               setState(() {
                                 moods[index].iselected = false;
+                                selectedMood = null;
+                                selectedMoodImage = null;
                                 ontapcount = 0;
+                                canSaveMood = false;
                               }),
                             }
                         },
@@ -406,7 +440,7 @@ class _StartPageState extends State<StartPage> {
                           act[index].selected ? Colors.black : Colors.white,
                         ),
                         onTap: () {
-                          toggleActivitySelection(index);
+                          _toggleActivitySelection(index);
                         },
                       ),
                     ],
@@ -430,35 +464,56 @@ class _StartPageState extends State<StartPage> {
                   ),
                   GestureDetector(
                     onTap: () async {
-                      setState(() {
-                        moodCard =
-                            Provider.of<MoodCard>(context, listen: false);
-                        moodCard.activities.clear();
-                        selectedActivities.clear();
-                        moodCard.addPlace(
-                          DateTime.now().toString(),
-                          mood!,
-                          image!,
-                          moodCard.activityimage.toSet().join('_'),
-                          moodCard.activityname.toSet().join('_'),
+                      if (canSaveMood) {
+                        print(12345);
+                        print(selectedMood);
+                        setState(() {
+                          moodCard =
+                              Provider.of<MoodCard>(context, listen: false);
+                          moodCard.activities.clear();
+                          selectedActivities.clear();
+                          moodCard.addPlace(
+                            DateTime.now().toString(),
+                            selectedMood!,
+                            selectedMoodImage!,
+                            moodCard.activityimage.toSet().join('_'),
+                            moodCard.activityname.toSet().join('_'),
+                          );
+                          Navigator.of(context).pushNamed('/home_screen');
+                        });
+                        calculateConsecutiveDays();
+                        calculateWeekly();
+                      } else {
+                        // Show a friendly instruction using SnackBar
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                "Please pick a mood and at least one activity!"),
+                            duration: Duration(seconds: 2),
+                          ),
                         );
-                        Navigator.of(context).pushNamed('/home_screen');
-                      });
-                      calculateConsecutiveDays();
-                      calculateWeekly();
+                      }
                     },
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          child: CircleAvatar(
-                            child: Icon(Icons.save_alt,
-                                color: Colors.white, size: 30),
-                            radius: 30,
-                            backgroundColor: Colors.orange,
+                        Container(
+                          width: 55,
+                          height: 55,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: canSaveMood
+                                ? Colors.orange
+                                : Colors
+                                    .grey, // Disable the button if canSaveMood is false
                           ),
-                          backgroundColor: Colors.white,
+                          child: Center(
+                            child: Icon(
+                              Icons.save_alt,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
                         ),
                       ],
                     ),

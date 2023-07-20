@@ -27,6 +27,7 @@ showLoaderDialog(BuildContext context) {
 class MoodDay extends StatefulWidget {
   final String docId;
   final String date;
+  final GlobalKey<_MoodDayState> moodDayKey = GlobalKey<_MoodDayState>();
 
   final String mood;
   final String image;
@@ -35,11 +36,27 @@ class MoodDay extends StatefulWidget {
 
   MoodDay(this.docId, this.image, this.date, this.mood, this.a, this.b);
 
+  bool _isMounted = false;
+
   @override
   _MoodDayState createState() => _MoodDayState();
 }
 
 class _MoodDayState extends State<MoodDay> {
+  @override
+  void initState() {
+    super.initState();
+    // Set the flag to true when the widget is mounted
+    widget._isMounted = true;
+  }
+
+  @override
+  void dispose() {
+    // Set the flag to false when the widget is disposed
+    widget._isMounted = false;
+    super.dispose();
+  }
+
   String formatReadableDate(String dateString) {
     DateTime date = DateTime.parse(dateString);
 
@@ -103,8 +120,11 @@ class _MoodDayState extends State<MoodDay> {
                       // Show the loader dialog
                       await Provider.of<MoodCard>(context, listen: false)
                           .deletePlaces(widget.docId);
-                      Navigator.of(context).pop(); // Dismiss the loader dialog
-                      setState(() {}); // Update the UI after deleting the entry
+
+                      // Check if the widget is still mounted before calling setState
+                      if (widget._isMounted) {
+                        setState(() {});
+                      }
                     },
                   ),
                 ],

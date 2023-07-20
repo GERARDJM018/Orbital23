@@ -160,7 +160,6 @@ class _LoginPageState extends State<LoginPage> {
                       : createUserWithEmailAndPassword,
                 ),
 
-                const SizedBox(height: 50),
                 // not a member? register now
                 Row(
                   // register now

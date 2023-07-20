@@ -29,6 +29,8 @@ class _AddEventState extends State<AddEvent> {
   final _startMController = TextEditingController();
   final _endHController = TextEditingController();
   final _endMController = TextEditingController();
+  final _startHMController = TextEditingController();
+  final _endHMController = TextEditingController();
   List<String> TypeMode = [
     'Class',
     'Test',
@@ -43,16 +45,20 @@ class _AddEventState extends State<AddEvent> {
     _selectedDate = widget.selectedDate ?? DateTime.now();
   }
 
-  void _selectTime(TextEditingController controller) async {
+  void _selectTime(
+      TextEditingController controller,
+      TextEditingController controller2,
+      TextEditingController controller3) async {
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
 
     if (pickedTime != null) {
-      final formattedTime =
-          '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
-      controller.text = formattedTime;
+      controller.text = pickedTime.hour.toString().padLeft(2, '0');
+      controller2.text = pickedTime.minute.toString().padLeft(2, '0');
+      controller3.text =
+          "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
     }
   }
 
@@ -99,14 +105,15 @@ class _AddEventState extends State<AddEvent> {
                     borderRadius: BorderRadius.circular(8), // Rounded corners
                   ),
                   child: TextField(
-                    controller: _startHController,
+                    controller: _startHMController,
                     decoration: InputDecoration(
                       labelText: 'Start Time',
                       border: InputBorder.none, // Hide the default underline
                       contentPadding: EdgeInsets.symmetric(horizontal: 12),
                     ),
                     readOnly: true,
-                    onTap: () => _selectTime(_startHController),
+                    onTap: () => _selectTime(_startHController,
+                        _startMController, _startHMController),
                   ),
                 ),
               ),
@@ -121,14 +128,15 @@ class _AddEventState extends State<AddEvent> {
                     borderRadius: BorderRadius.circular(8), // Rounded corners
                   ),
                   child: TextField(
-                    controller: _endHController,
+                    controller: _endHMController,
                     decoration: InputDecoration(
                       labelText: 'End Time',
                       border: InputBorder.none, // Hide the default underline
                       contentPadding: EdgeInsets.symmetric(horizontal: 12),
                     ),
                     readOnly: true,
-                    onTap: () => _selectTime(_endHController),
+                    onTap: () => _selectTime(
+                        _endHController, _endMController, _endHMController),
                   ),
                 ),
               ),

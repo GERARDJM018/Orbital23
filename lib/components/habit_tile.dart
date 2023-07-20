@@ -29,7 +29,7 @@ class HabitTile extends StatelessWidget {
           children: [
             SlidableAction(
               onPressed: settingsTapped,
-              backgroundColor: Colors.grey.shade800,
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
               icon: Icons.settings,
               borderRadius: BorderRadius.circular(12),
             ),
@@ -47,7 +47,7 @@ class HabitTile extends StatelessWidget {
               child: Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 159, 161, 158),
+                  color: Color.fromARGB(255, 255, 255, 255),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(

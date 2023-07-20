@@ -13,12 +13,45 @@ class SettingPage extends StatefulWidget {
 class _SettingPageState extends State<SettingPage> {
   int numberOfMoodsSaved = 0;
   String email = '';
+  int numberOfHabitsDone = 0;
 
   @override
   void initState() {
+    initializeData();
+
     super.initState();
-    fetchData();
+  }
+
+  Future<void> initializeData() async {
+    await fetchData();
+    await countHabits(); // Update the number of habits done before updating the UI
     calculateEmotions();
+    // Add other initialization tasks here if needed
+
+    // Once all the data is fetched and initialized, trigger a rebuild of the UI
+    setState(() {});
+  }
+
+  Future<void> countHabits() async {
+    numberOfHabitsDone = 0; // Reset the count before calculating
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      QuerySnapshot<Map<String, dynamic>> habitsSnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .collection('habits')
+              .get();
+
+      habitsSnapshot.docs.forEach((habitDoc) {
+        List<dynamic> habitData = habitDoc.get('habit');
+        if (habitData.length >= 2 && habitData[1] == true) {
+          numberOfHabitsDone++; // Increment the count of habits done
+        }
+      });
+
+      print('Number of habits done: $numberOfHabitsDone');
+    }
   }
 
   Future<void> fetchData() async {
@@ -31,7 +64,6 @@ class _SettingPageState extends State<SettingPage> {
               .get();
 
       if (userSnapshot.exists) {
-        String userId = currentUser.uid;
         String userEmail = userSnapshot.get('email').toString();
 
         setState(() {
@@ -63,7 +95,7 @@ class _SettingPageState extends State<SettingPage> {
   Widget build(BuildContext context) {
     int experience = 1000;
     String roomColor = 'White';
-    int numberOfHabitsDone = 0; // Initialize the count to 0
+    // Initialize the count to 0
 
     // Update the count based on the habit completion status from the database
 

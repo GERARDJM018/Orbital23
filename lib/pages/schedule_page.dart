@@ -128,7 +128,7 @@ class _SchedulePageState extends State<SchedulePage> {
           padding: EdgeInsets.all(10),
           child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
             SizedBox(
-              height: 40,
+              height: 30,
             ),
             Container(
               width: 150,
@@ -183,9 +183,6 @@ class _SchedulePageState extends State<SchedulePage> {
                   color: Colors.white,
                 ),
                 child: tableCalendar(context)),
-            SizedBox(
-              height: 20,
-            ),
             Expanded(
                 child: ListView(children: [
               ..._getEventsForTheDay(_selectedDay).map(
@@ -244,6 +241,7 @@ class _SchedulePageState extends State<SchedulePage> {
             ])),
           ])),
       floatingActionButton: FloatingActionButton(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         heroTag: "schedule",
         backgroundColor: Colors.orange,
         onPressed: () async {

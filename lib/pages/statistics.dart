@@ -336,6 +336,9 @@ class _StatisticsState extends State<Statistics> {
                         Container(
                           width: MediaQuery.of(context).size.width,
                           child: LinearPercentIndicator(
+                            linearStrokeCap: LinearStrokeCap
+                                .round, // Use round stroke caps for a thicker line
+
                             barRadius: Radius.circular(5),
                             lineHeight: 20,
                             width: MediaQuery.of(context).size.width,
@@ -381,6 +384,8 @@ class _StatisticsState extends State<Statistics> {
                       right: 0,
                       child: Center(
                         child: FloatingActionButton(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15)),
                           backgroundColor: Colors.orange,
                           onPressed: () {
                             createNewHabit(context);

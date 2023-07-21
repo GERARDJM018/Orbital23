@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:zenith/class/level.dart';
+import 'package:flare_flutter/flare_actor.dart';
 
 //line 406
 
@@ -344,8 +345,20 @@ class _HomePageState extends State<HomePage> {
           ),
           SizedBox(
             width: 100,
-            child: TimerClass(isActionFinished: isActionFinished),
-          )
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFFCED3C4),
+                    Color(0xFFD8D8D8),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: TimerClass(isActionFinished: isActionFinished),
+            ),
+          ),
         ],
       ),
     );
@@ -416,69 +429,96 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _room(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(right: 2, left: 4),
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFF9F59), Color(0xFFF98A4F)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withOpacity(0.5),
-            spreadRadius: 2,
-            blurRadius: 6,
-            offset: Offset(0, 3),
+    return Column(
+      children: [
+        Container(
+          margin: EdgeInsets.only(right: 2, left: 4),
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFF9F59), Color(0xFFF98A4F)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.orange.withOpacity(0.5),
+                spreadRadius: 2,
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: IconButton(
-        onPressed: _OpenRoomOverlay,
-        icon: Icon(
-          Icons.shop,
-          color: Colors.white,
-          size: 30,
+          child: IconButton(
+            onPressed: _OpenRoomOverlay,
+            icon: Icon(
+              Icons.chair,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
         ),
-      ),
+        Text('Room',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ))
+      ],
     );
   }
 
   Widget _pointsWidget(BuildContext context) {
-    return Container(
-      height: 40,
-      width: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.amber,
-      ),
-      child: Center(
-        child: Text(
-          _level.toString(),
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+    return Column(
+      children: [
+        Container(
+          height: 45,
+          width: 45,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.amber,
+          ),
+          child: Center(
+            child: Text(
+              _level.toString(),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
-      ),
+        Text('level',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            )),
+      ],
     );
   }
 
   Widget _refreshButton(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      child: CircularProgressIndicator(
-        value: _level < 10 ? _exp / 10 : _exp / 100,
-        backgroundColor: const Color.fromARGB(255, 199, 200, 196),
-        valueColor: const AlwaysStoppedAnimation<Color>(
-          Color.fromARGB(255, 11, 122, 68),
+    return Column(
+      children: [
+        Container(
+          width: 45,
+          height: 45,
+          child: AdvancedCircularProgressIndicator(
+            value: _level < 10 ? _exp / 10 : _exp / 100,
+            strokeWidth: 3.0,
+            backgroundColor: const Color.fromARGB(255, 199, 200, 196),
+            progressColor: Colors.green, // Choose the progress color you desire
+            radius: 20, // Adjust the radius to match your preferred style
+            padding: 8,
+          ),
         ),
-        strokeWidth: 3,
-      ),
+        Text('Exp %',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ))
+      ],
     );
   }
 
@@ -487,8 +527,10 @@ class _HomePageState extends State<HomePage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _pointsWidget(context),
-        SizedBox(width: 20),
+        SizedBox(width: 15),
         _refreshButton(context),
+        SizedBox(width: 15),
+        _room(context)
       ],
     );
   }
@@ -505,14 +547,17 @@ class _HomePageState extends State<HomePage> {
         color: Color.fromARGB(255, 250, 249, 249),
       ),
       child: ClipRRect(
-          borderRadius: BorderRadius.circular(2.0),
-          child: LinearProgressIndicator(
-            value: progressPercentage,
-            backgroundColor: const Color.fromARGB(255, 199, 200, 196),
-            valueColor: const AlwaysStoppedAnimation<Color>(
-                Color.fromARGB(255, 11, 122, 68)),
-            minHeight: 20,
-          )),
+        borderRadius: BorderRadius.circular(2.0),
+        child: AdvancedLinearProgressIndicator(
+          value: progressPercentage,
+          minHeight: 20,
+          backgroundColor: const Color.fromARGB(255, 199, 200, 196),
+          progressGradientColors: [
+            const Color.fromARGB(255, 11, 122, 68), // Start Color
+            const Color.fromARGB(255, 0, 175, 88), // End Color
+          ],
+        ),
+      ),
     );
     return MaterialApp(
       title: 'Home Page',
@@ -546,35 +591,11 @@ class _HomePageState extends State<HomePage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _titleController.text == ''
-                              ? Container(
-                                  height: getShapeHeight(context) * 0.020,
-                                  width: getShapeWidth(context) * 0.50,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(40),
-                                    color: Color.fromARGB(255, 250, 249, 249),
-                                  ),
-                                  child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(2.0),
-                                      child: LinearProgressIndicator(
-                                        value: 0,
-                                        backgroundColor: const Color.fromARGB(
-                                            255, 199, 200, 196),
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                                Color.fromARGB(
-                                                    255, 11, 122, 68)),
-                                        minHeight: 20,
-                                      )),
-                                )
-                              : progress,
+                          _titleController.text == '' ? SizedBox() : progress,
                           Row(
                             children: [
                               _refreshAndPoint(context),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              _room(context),
+                              //_room(context),
                             ],
                           ),
                         ],
@@ -595,7 +616,6 @@ class _HomePageState extends State<HomePage> {
             } else if (isActionLoading) {
               _cancelActivity();
             } else {
-              print('finish');
               _finishActivity();
             }
           },
@@ -607,17 +627,33 @@ class _HomePageState extends State<HomePage> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           child: Container(
             padding: EdgeInsets.all(isActionLoading ? 6.0 : 10.0),
-            child: isActionLoading
-                ? CircularProgressIndicator(
-                    strokeWidth: 3.0,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  )
-                : Icon(
-                    // Conditionally set the icon here
-                    currentAction == 'No activity' ? Icons.add : Icons.check,
-                    size: 30,
-                    color: Colors.white,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                isActionLoading
+                    ? CircularProgressIndicator(
+                        strokeWidth: 3.0,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      )
+                    : Icon(
+                        // Conditionally set the icon here
+                        currentAction == 'No activity'
+                            ? Icons.add
+                            : Icons.check,
+                        size: 30,
+                        color: Colors.white,
+                      ),
+                if (isActionLoading)
+                  Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                    ),
                   ),
+              ],
+            ),
           ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -666,8 +702,18 @@ class TimerClass extends GetView<TimerController> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Container(
-            color: const Color.fromARGB(255, 199, 200, 196),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFCED3C4),
+                Color(0xFFD8D8D8),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Container(
             height: 70,
             width: 100,
             child: Obx(
@@ -681,7 +727,9 @@ class TimerClass extends GetView<TimerController> {
                   ),
                 ),
               ),
-            )),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -960,7 +1008,6 @@ class _MyRoomState extends State<MyRoom> {
       if (totalExp >= 1000) {
         _exp = totalExp - 1000 * _level;
       } else {
-        print('asd');
         _exp = totalExp;
       }
       acc = level;
@@ -994,7 +1041,7 @@ class _MyRoomState extends State<MyRoom> {
     } else {
       return Card(
           child: Container(
-        child: Center(child: Text('Unlocked at level' + levelC.toString())),
+        child: Center(child: Text('Unlocked at level ' + levelC.toString())),
         height: 70,
       ));
     }
@@ -1014,6 +1061,210 @@ class _MyRoomState extends State<MyRoom> {
           _cardRoom('Black', 30),
         ],
       ),
+    );
+  }
+}
+
+class AdvancedLinearProgressIndicator extends StatefulWidget {
+  final double value;
+  final double minHeight;
+  final Color backgroundColor;
+  final List<Color> progressGradientColors;
+
+  AdvancedLinearProgressIndicator({
+    required this.value,
+    required this.minHeight,
+    required this.backgroundColor,
+    required this.progressGradientColors,
+  });
+
+  @override
+  _AdvancedLinearProgressIndicatorState createState() =>
+      _AdvancedLinearProgressIndicatorState();
+}
+
+class _AdvancedLinearProgressIndicatorState
+    extends State<AdvancedLinearProgressIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0, end: widget.value).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AdvancedLinearProgressIndicator oldWidget) {
+    if (oldWidget.value != widget.value) {
+      _progressAnimation = Tween<double>(
+        begin: oldWidget.value,
+        end: widget.value,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeOut,
+        ),
+      );
+      _animationController.forward(from: 0);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Container(
+          height: widget.minHeight,
+          decoration: BoxDecoration(
+            color: widget.backgroundColor,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Stack(
+              children: [
+                FractionallySizedBox(
+                  widthFactor: _progressAnimation.value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: widget.progressGradientColors,
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class AdvancedCircularProgressIndicator extends StatefulWidget {
+  final double value;
+  final double strokeWidth;
+  final Color backgroundColor;
+  final Color progressColor;
+  final double radius;
+  final double padding;
+
+  AdvancedCircularProgressIndicator({
+    required this.value,
+    this.strokeWidth = 3.0,
+    required this.backgroundColor,
+    required this.progressColor,
+    this.radius = 20,
+    this.padding = 8,
+  });
+
+  @override
+  _AdvancedCircularProgressIndicatorState createState() =>
+      _AdvancedCircularProgressIndicatorState();
+}
+
+class _AdvancedCircularProgressIndicatorState
+    extends State<AdvancedCircularProgressIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0, end: widget.value).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AdvancedCircularProgressIndicator oldWidget) {
+    if (oldWidget.value != widget.value) {
+      _progressAnimation = Tween<double>(
+        begin: oldWidget.value,
+        end: widget.value,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeOut,
+        ),
+      );
+      _animationController.forward(from: 0);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Container(
+          width: widget.radius * 2 + widget.padding * 2,
+          height: widget.radius * 2 + widget.padding * 2,
+          padding: EdgeInsets.all(widget.padding),
+          decoration: BoxDecoration(
+            color: widget.backgroundColor,
+            shape: BoxShape.circle,
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: widget.strokeWidth,
+                  value: _progressAnimation.value,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    widget.progressColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

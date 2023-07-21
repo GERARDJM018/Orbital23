@@ -8,7 +8,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:zenith/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class MoodChart extends StatefulWidget {
   @override
   _MoodChartState createState() => _MoodChartState();
@@ -26,27 +25,23 @@ class _MoodChartState extends State<MoodChart> {
     Color(0xFF00b894),
   ];
 
-
   late Map<String, double> dataMap = Map();
   Map<String, double> dataMap2 = Map();
   Map<int, int> moodCategoryCount = Map<int, int>();
-  CollectionReference usersCollection = FirebaseFirestore.instance.collection('user_moods');
-
-
-
+  CollectionReference usersCollection =
+      FirebaseFirestore.instance.collection('user_moods');
 
   void updateEmotionCounts() async {
-    
     // Reset count variables for emotions
     setState(() {
       dataMap = {
-      'Angry': 0,
-      'Happy': 0,
-      'Sad': 0,
-      'Surprised': 0,
-      'Loving': 0,
-      'Scared': 0,
-    };
+        'Angry': 0,
+        'Happy': 0,
+        'Sad': 0,
+        'Surprised': 0,
+        'Loving': 0,
+        'Scared': 0,
+      };
     });
 
     print(Provider.of<MoodCard>(context, listen: false).data);
@@ -54,18 +49,19 @@ class _MoodChartState extends State<MoodChart> {
     Provider.of<MoodCard>(context, listen: false).data.forEach((element) {
       if (element.moodno == 1) {
         print(dataMap['Angry'].toString() + ' abc');
-        dataMap['Angry'] = (dataMap['Angry'] ?? 0) + 1;}
-      else if (element.moodno == 2) {
-        dataMap['Happy'] = (dataMap['Happy'] ?? 0) + 1;}
-      else if (element.moodno == 3) {
+        dataMap['Angry'] = (dataMap['Angry'] ?? 0) + 1;
+      } else if (element.moodno == 2) {
+        dataMap['Happy'] = (dataMap['Happy'] ?? 0) + 1;
+      } else if (element.moodno == 3) {
         print(dataMap['Sad'].toString() + ' abd');
-        dataMap['Sad'] = (dataMap['Sad'] ?? 0) + 1;}
-      else if (element.moodno == 4) {
-        dataMap['Surprised'] = (dataMap['Surprised'] ?? 0) + 1;}
-      else if (element.moodno == 5) {
-        dataMap['Loving'] = (dataMap['Loving'] ?? 0) + 1;}
-      else {
-        dataMap['Scared'] = (dataMap['Scared'] ?? 0) + 1;}
+        dataMap['Sad'] = (dataMap['Sad'] ?? 0) + 1;
+      } else if (element.moodno == 4) {
+        dataMap['Surprised'] = (dataMap['Surprised'] ?? 0) + 1;
+      } else if (element.moodno == 5) {
+        dataMap['Loving'] = (dataMap['Loving'] ?? 0) + 1;
+      } else {
+        dataMap['Scared'] = (dataMap['Scared'] ?? 0) + 1;
+      }
     });
   }
 
@@ -122,7 +118,7 @@ class _MoodChartState extends State<MoodChart> {
       charts.Series(
         id: 'Moods',
         data: data,
-        domainFn: (MoodData series, _) => series.date,
+        domainFn: (MoodData series, _) => series.date.toString(),
         measureFn: (MoodData series, _) => series.moodno,
         colorFn: (MoodData series, _) => charts.ColorUtil.fromDartColor(
           Color(0xFF74b9ff),
@@ -163,15 +159,6 @@ class _MoodChartState extends State<MoodChart> {
                   ),
                   direction: 1,
                 ),
-              ),
-            ),
-          ),
-          Container(
-            height: 200,
-            child: MyMoodCard(
-              charts.BarChart(
-                series,
-                animate: true,
               ),
             ),
           ),

@@ -8,6 +8,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:zenith/class/level.dart';
 
+//line 406
+
 final List<Actions1> finishedActions = [
   // put it outside of the class so it is accessable from home page
   Actions1(
@@ -19,21 +21,29 @@ final List<Actions1> finishedActions = [
 ];
 
 class HomePage extends StatefulWidget {
+  FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+
+  FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  HomePage(this._firebaseAuth, this._firestore);
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  bool isLoading = true;
+  bool isAnimationRunning = false;
   int updatedFinishedActions = finishedActions.length;
   WebViewController? _animationController;
   String currentAction = 'No activity';
-  String animation = 'Base';
+  String animation = 'Category.others';
   static TextEditingController _titleController = TextEditingController();
   static TextEditingController _timeController = TextEditingController();
   static TextEditingController _noteController = TextEditingController();
   static Category _selectedCategory = Category.study;
   static Difficulty _selectedDifficulty = Difficulty.easy;
-  final User? user = Auth().currentUser;
+  late User? user = Auth(widget._firebaseAuth).currentUser;
   late int _level;
   late int _exp;
   late int _totalExperience;
@@ -41,14 +51,17 @@ class _HomePageState extends State<HomePage> {
   late String room;
 
   final Map<String, String> animationMap = {
-    'Base': 'https://www.youtube.com/',
-    'Sleep': 'https://gerardjm018.github.io/animationproto/sleep.html',
-    'Workout': 'https://gerardjm018.github.io/animationproto/walkAction.html',
-    'Study': ''
+    'Category.others': 'others.html',
+    'Category.rest': 'sleep.html',
+    'Category.workout': 'walk.html',
+    'Category.study': 'study.html'
   };
 
   final Map<String, String> roomMap = {
-
+    'Green': 'red',
+    'White': 'white',
+    'Purple': 'black',
+    'Blue': 'blue'
   };
 
   @override
@@ -61,67 +74,114 @@ class _HomePageState extends State<HomePage> {
     room = 'blue';
     _loadFirestoreLevel();
 
+    String roomCol = 'White';
+
+    _getRoomC().then((String result) {
+      roomCol = result;
+    });
+
     _animationController = WebViewController()
-  ..setJavaScriptMode(JavaScriptMode.unrestricted)
-  ..setBackgroundColor(const Color(0x00000000))
-  ..setNavigationDelegate(
-    NavigationDelegate(
-      onProgress: (int progress) {
-        // Update loading bar.
-      },
-      onPageStarted: (String url) {},
-      onPageFinished: (String url) {},
-      onWebResourceError: (WebResourceError error) {},
-      onNavigationRequest: (NavigationRequest request) {
-        if (request.url.startsWith('https://www.youtube.com/')) {
-          return NavigationDecision.prevent;
-        }
-        return NavigationDecision.navigate;
-      },
-    ),
-  )
-  
-  ..loadRequest(Uri.parse(animationMap[animation]!));
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            setState(() {
+              isLoading = progress < 100;
+            });
+          },
+          onPageStarted: (String url) {
+            setState(() {
+              isLoading = true;
+              isAnimationRunning = false;
+            });
+
+            Future.delayed(Duration(seconds: 1), () {
+              if (!mounted)
+                return; // Avoid calling setState if the widget is disposed
+              setState(() {
+                isAnimationRunning = true;
+              });
+            });
+          },
+          onPageFinished: (String url) {
+            setState(() {
+              isLoading = false;
+              isAnimationRunning = true;
+            });
+          },
+          onWebResourceError: (WebResourceError error) {},
+          onNavigationRequest: (NavigationRequest request) {
+            if (request.url.startsWith('https://www.youtube.com/')) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse('https://gerardjm018.github.io/animationproto/' +
+          roomMap[roomCol]! +
+          animationMap[Category.others.toString()]!));
   }
 
   _loadFirestoreLevel() async {
-  final snap = await FirebaseFirestore.instance
+    final snap = await FirebaseFirestore.instance
         .collection('level')
         .where('email', isEqualTo: user?.email ?? 'User email')
         .withConverter(
-            fromFirestore: Level.fromFirestore, 
+            fromFirestore: Level.fromFirestore,
             toFirestore: (level, options) => level.toFirestore())
         .get();
-  if (snap.docs.isEmpty)  {
+    if (snap.docs.isEmpty) {
       _createLevel();
       return _loadFirestoreLevel();
-  } 
-  for (var doc in snap.docs)  { 
-    final level = doc.data();
-    final totalExp = level.experience;
-    _totalExperience = totalExp;
-    _level = (totalExp / 1000).floorToDouble().round();
-    if (totalExp >= 1000) {
-      _exp = totalExp - 1000 * _level;
-    } else  {
-      print('asd');
-      _exp = totalExp;
     }
-    acc = level;
-    room = level.room;
+    for (var doc in snap.docs) {
+      final level = doc.data();
+      final totalExp = level.experience;
+      _totalExperience = totalExp;
+      if (totalExp <= 90) {
+        _level = 1 + (totalExp / 10).floorToDouble().round();
+      } else {
+        _level = ((totalExp - 90) / 100).floorToDouble().round() + 10;
+      }
+      if (totalExp > 90) {
+        _exp = (totalExp - 90) - 100 * (_level - 10);
+      } else {
+        _exp = totalExp - 10 * (_level - 1);
+      }
+      acc = level;
+      room = level.room;
+    }
+    setState(() {});
   }
-  setState(() {});
+
+  Future<String> _getRoomC() async {
+    final snap = await widget._firestore
+        .collection('level')
+        .where('email', isEqualTo: user?.email ?? 'User email')
+        .withConverter(
+            fromFirestore: Level.fromFirestore,
+            toFirestore: (level, options) => level.toFirestore())
+        .get();
+
+    String abc = 'White';
+    for (var doc in snap.docs) {
+      final level = doc.data();
+      abc = level.room;
+    }
+    return abc;
   }
 
   void _createLevel() async {
     await FirebaseFirestore.instance.collection('level').add({
-      "experience": 1000,
+      "experience": 0,
       "email": user?.email ?? 'User email',
       "room": "White",
     });
   }
 
-  void _editExperience(int gainedExp) async  {
+  void _editExperience(int gainedExp) async {
     await FirebaseFirestore.instance.collection('level').doc(acc.id).update({
       "experience": _totalExperience + gainedExp,
       "email": user?.email ?? 'User email',
@@ -130,10 +190,6 @@ class _HomePageState extends State<HomePage> {
     _loadFirestoreLevel();
   }
 
-  // at page controller, problem is start action doesnt add the action
-
-  // not, it is updated since the length of the list change, but why index error?
-  // how to debug? the print is at page controller line 33
   double getShapeHeight(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     return screenHeight;
@@ -148,10 +204,6 @@ class _HomePageState extends State<HomePage> {
     _titleController = title;
   }
 
-  Future<void> signOut() async{
-    await Auth().signOut();
-  }
-
   double progressPercentage =
       0; // 1st bug+ the timer keeps getting faster 2nd = the bar doesnt reset -> fixed
   // when add new action, reset to 0, no wsolve timer getting faster
@@ -164,9 +216,9 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         if (progressPercentage >= 1.0) {
           timer.cancel();
-            setState(() {
-              currentAction = 'finished';
-            });
+          setState(() {
+            currentAction = 'finished';
+          });
         } else {
           progressPercentage += increment;
         }
@@ -178,6 +230,49 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       currentAction = 'No activity';
       progressPercentage = 0.0;
+      TimerController timerController = Get.find<TimerController>();
+      timerController.startTimer(0);
+      progressPercentage = -1.0;
+      _animationController!.loadRequest(Uri.parse(
+          'https://gerardjm018.github.io/animationproto/' +
+              roomMap[room]! +
+              animationMap[Category.others.toString()]!));
+    });
+    _titleController.clear();
+  }
+
+  int _categoryToInt(Category category) {
+    if (category == Category.rest) {
+      return 0;
+    } else if (category == Category.study) {
+      return 1;
+    } else {
+      return 1;
+    }
+  }
+
+  int _dificultyToInt(Difficulty difficulty) {
+    if (difficulty == Difficulty.easy) {
+      return 1;
+    } else if (difficulty == Difficulty.hard) {
+      return 3;
+    } else {
+      return 2;
+    }
+  }
+
+  void _finishActivity() {
+    int selectedCat = _categoryToInt(finishedActions.last.category);
+    int selectedDif = _dificultyToInt(finishedActions.last.difficulty);
+    int selectedDur = finishedActions.last.duration;
+    _editExperience(selectedDur * selectedDif * selectedCat);
+    setState(() {
+      currentAction = 'No activity';
+      progressPercentage = 0.0;
+      _animationController!.loadRequest(Uri.parse(
+          'https://gerardjm018.github.io/animationproto/' +
+              roomMap[room]! +
+              animationMap[Category.others.toString()]!));
     });
     _titleController.clear();
   }
@@ -188,8 +283,30 @@ class _HomePageState extends State<HomePage> {
       progressPercentage = 0;
       finishedActions.add(actions);
       TimerController timerController = Get.find<TimerController>();
-      timerController.startTimer(actions.duration);
-      startProgressTimer(actions.duration);
+      timerController.startTimer(actions.duration * 60);
+      startProgressTimer(actions.duration * 60);
+      _animationController!.loadRequest(Uri.parse(
+          'https://gerardjm018.github.io/animationproto/' +
+              roomMap[room]! +
+              animationMap[actions.category.toString()]!));
+    });
+  }
+
+  void _changeRoom(String rooms) {
+    String act;
+
+    if (currentAction == 'No activity') {
+      act = Category.others.toString();
+    } else {
+      act = finishedActions.last.category.toString();
+    }
+
+    setState(() {
+      room = rooms;
+      _animationController!.loadRequest(Uri.parse(
+          'https://gerardjm018.github.io/animationproto/' +
+              roomMap[rooms]! +
+              animationMap[act]!));
     });
   }
 
@@ -203,46 +320,64 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   Widget _activityBar(BuildContext context) {
+    final bool isActionFinished = currentAction == 'finished';
+
     return Container(
       height: getShapeHeight(context) * 0.0625,
       width: getShapeWidth(context) * 0.97,
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: const Color.fromARGB(255, 199, 200, 196)),
+        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFFCED3C4),
+            Color(0xFFD8D8D8),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
       padding: const EdgeInsets.all(15),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(_titleController.text == ''
-              ? currentAction
-              : finishedActions[updatedFinishedActions].title),
-          SizedBox(width: 100, child: const TimerClass())
+          Text(
+            _titleController.text.isEmpty
+                ? currentAction
+                : finishedActions.last.title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isActionFinished ? Colors.green : Colors.black,
+            ),
+          ),
+          SizedBox(
+            width: 100,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFFCED3C4),
+                    Color(0xFFD8D8D8),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: TimerClass(isActionFinished: isActionFinished),
+            ),
+          ),
         ],
       ),
     );
-  }
-
-
-  Widget _refreshButton(BuildContext context) {
-    // return IconButton( onPressed: (){_editExperience(100);
-    // _loadFirestoreLevel();},icon: Icon(Icons.autorenew));
-    return SizedBox(
-      child: LinearProgressIndicator(value: _exp / 1000,
-              backgroundColor: const Color.fromARGB(255, 199, 200, 196),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color.fromARGB(255, 11, 122, 68)),
-              minHeight: 20,),
-      width: 300,);
-  }
-  
-
-  Widget _pointsWidget(BuildContext context) {
-    // return Container(
-    //   child: Wrap(children: [Icon(Icons.currency_exchange), Text(_level.toString())]),
-    // );
-    return Container(child: Center(child: Text(_level.toString())), height: 50, width: 50, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.amber));
   }
 
   void _OpenRoomOverlay() {
@@ -250,56 +385,192 @@ class _HomePageState extends State<HomePage> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        return MyRoom();
+        return MyRoom(
+          onAddAction: _changeRoom,
+        );
       },
     );
   }
 
   Widget _refresh() {
-    return IconButton(onPressed:() { _loadFirestoreLevel();
-    setState(() {
-      animation = "Sleep";
-      _animationController!.loadRequest(Uri.parse('https://gerardjm018.github.io/animationproto/sleep.html'));
-    });
-    print(animation);}, icon: Icon(Icons.refresh));
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFFFF9F59),
+            Color(0xFFF98A4F),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: IconButton(
+        onPressed: () {
+          _loadFirestoreLevel();
+
+          setState(() {
+            if (currentAction == 'loading' || currentAction == 'finished') {
+              _animationController!.loadRequest(Uri.parse(
+                'https://gerardjm018.github.io/animationproto/' +
+                    roomMap[room]! +
+                    animationMap[finishedActions.last.category.toString()]!,
+              ));
+            } else {
+              _animationController!.loadRequest(Uri.parse(
+                'https://gerardjm018.github.io/animationproto/' +
+                    roomMap[room]! +
+                    animationMap[Category.others.toString()]!,
+              ));
+            }
+          });
+        },
+        icon: Icon(
+          Icons.refresh,
+          color: Colors.white,
+        ),
+      ),
+    );
   }
 
-  Widget _room(BuildContext context)  {
-    return IconButton(onPressed:
-        _OpenRoomOverlay
-        , icon: Icon(Icons.shop));
+  Widget _room(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          margin: EdgeInsets.only(right: 2, left: 4),
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFF9F59), Color(0xFFF98A4F)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.orange.withOpacity(0.5),
+                spreadRadius: 2,
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: IconButton(
+            onPressed: _OpenRoomOverlay,
+            icon: Icon(
+              Icons.chair,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+        ),
+        Text('Room',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ))
+      ],
+    );
+  }
+
+  Widget _pointsWidget(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          height: 45,
+          width: 45,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.amber,
+          ),
+          child: Center(
+            child: Text(
+              _level.toString(),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        Text('level',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            )),
+      ],
+    );
+  }
+
+  Widget _refreshButton(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 45,
+          height: 45,
+          child: AdvancedCircularProgressIndicator(
+            value: _level < 10 ? _exp / 10 : _exp / 100,
+            strokeWidth: 3.0,
+            backgroundColor: const Color.fromARGB(255, 199, 200, 196),
+            progressColor: Colors.green, // Choose the progress color you desire
+            radius: 20, // Adjust the radius to match your preferred style
+            padding: 8,
+          ),
+        ),
+        Text('Exp %',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ))
+      ],
+    );
   }
 
   Widget _refreshAndPoint(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _pointsWidget(
-          context,
-        ),
+        _pointsWidget(context),
+        SizedBox(width: 15),
         _refreshButton(context),
+        SizedBox(width: 15),
+        _room(context)
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isActionLoading = currentAction == 'loading';
     Get.put(TimerController());
     Widget progress = Container(
-      height: getShapeHeight(context) * 0.025,
-      width: getShapeWidth(context) * 0.97,
+      height: getShapeHeight(context) * 0.020,
+      width: getShapeWidth(context) * 0.50,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(40),
         color: Color.fromARGB(255, 250, 249, 249),
       ),
       child: ClipRRect(
-          borderRadius: BorderRadius.circular(10.0),
-          child: LinearProgressIndicator(
-            value: progressPercentage,
-            backgroundColor: const Color.fromARGB(255, 199, 200, 196),
-            valueColor: const AlwaysStoppedAnimation<Color>(
-                Color.fromARGB(255, 11, 122, 68)),
-            minHeight: 20,
-          )),
+        borderRadius: BorderRadius.circular(2.0),
+        child: AdvancedLinearProgressIndicator(
+          value: progressPercentage,
+          minHeight: 20,
+          backgroundColor: const Color.fromARGB(255, 199, 200, 196),
+          progressGradientColors: [
+            const Color.fromARGB(255, 11, 122, 68), // Start Color
+            const Color.fromARGB(255, 0, 175, 88), // End Color
+          ],
+        ),
+      ),
     );
     return MaterialApp(
       title: 'Home Page',
@@ -323,39 +594,89 @@ class _HomePageState extends State<HomePage> {
           alignment: Alignment.topCenter,
           child: Container(
               child: Padding(
-                  padding: const EdgeInsets.all(15),
+                  padding: EdgeInsets.only(left: 10, right: 10),
                   child: Column(
                     children: [
-                      _activityBar(
-                          context), // need to change this -> need to have access to actions list in
+                      _activityBar(context),
                       const SizedBox(
-                        // page controller finishedActions but how to access?-> imitate expenses list
-                        height: 5,
+                        height: 10,
                       ),
-                      _titleController.text == '' ? SizedBox(height: 20,) : progress,
-                      const SizedBox(
-                        height: 5,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _titleController.text == '' ? SizedBox() : progress,
+                          Row(
+                            children: [
+                              _refreshAndPoint(context),
+                              //_room(context),
+                            ],
+                          ),
+                        ],
                       ),
-                      _refreshAndPoint(context),
-                      _room(context),
-                      _refresh(),
-                      Container(width: 300, height: 300, child: WebViewWidget(controller: _animationController!)),
+                      Stack(
+                        children: [
+                          Container(
+                            width: 390,
+                            height: 430,
+                            child: WebViewWidget(
+                                controller: _animationController!),
+                          ),
+                          if (isLoading || !isAnimationRunning)
+                            Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        ],
+                      ) // Show loading indicator while WebView is loading
                     ],
                   ))),
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: "home",
-          backgroundColor: Colors.orange,
           onPressed: () {
-            if (currentAction == 'No activity')   {
+            if (currentAction == 'No activity') {
               _openAddActionsOverlay();
-            } else if(currentAction == 'loading') {
+            } else if (isActionLoading) {
               _cancelActivity();
             } else {
-              _cancelActivity();
+              _finishActivity();
             }
           },
-          child: currentAction == 'No activity' ? Icon(Icons.add) : currentAction == 'loading' ? Icon(Icons.cancel) : Icon(Icons.check),
+          backgroundColor: isActionLoading
+              ? Color.fromARGB(255, 37, 50, 226)
+              : Colors.orange,
+          elevation: 8.0,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          child: Container(
+            padding: EdgeInsets.all(isActionLoading ? 6.0 : 10.0),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                isActionLoading
+                    ? SquareCircularProgressIndicator(
+                        size: 50.0, // Replace this with your desired size
+                        color: Colors.white,
+                      )
+                    : Icon(
+                        // Conditionally set the icon here
+                        currentAction == 'No activity'
+                            ? Icons.add
+                            : Icons.check,
+                        size: 30,
+                        color: Colors.white,
+                      ),
+                if (isActionLoading)
+                  Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
@@ -394,28 +715,64 @@ class TimerController extends GetxController {
   }
 }
 
+class SquareCircularProgressIndicator extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  SquareCircularProgressIndicator({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      child: CircularProgressIndicator(
+        strokeWidth: 3.0,
+        valueColor: AlwaysStoppedAnimation<Color>(color),
+      ),
+    );
+  }
+}
+
 class TimerClass extends GetView<TimerController> {
-  const TimerClass({Key? key}) : super(key: key);
+  const TimerClass({required this.isActionFinished, Key? key})
+      : super(key: key);
+  final bool isActionFinished;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Center(
-      child: Container(
-        color: const Color.fromARGB(255, 199, 200, 196),
-        height: 70,
-        width: 100,
-        child: Obx(() => Center(
-              child: Text(
-                controller.time.value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color.fromARGB(255, 0, 0, 0),
+      body: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFCED3C4),
+                Color(0xFFD8D8D8),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Container(
+            height: 70,
+            width: 100,
+            child: Obx(
+              () => Center(
+                child: Text(
+                  controller.time.value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isActionFinished ? Colors.green : Colors.black,
+                  ),
                 ),
               ),
-            )),
+            ),
+          ),
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -469,105 +826,189 @@ class _NewActionState extends State<NewAction> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
-      child: Column(
-        children: [
-          TextField(
-            controller: _titleController,
-            maxLength: 20,
-            keyboardType: TextInputType.name,
-            decoration: const InputDecoration(label: Text('Title')),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _timeController,
-                  maxLength: 50,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    suffixText: 'minutes ',
-                    label: Text('Duration'),
-                  ),
+    return Column(
+      children: [
+        Container(
+          // or SizedBox(height: 96) for spacing
+          height: 28, // Adjust the height to move the app bar down
+        ),
+        Expanded(
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text('New Action'),
+            ),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                child: ListView(
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      maxLength: 20,
+                      keyboardType: TextInputType.name,
+                      decoration: InputDecoration(
+                        labelText: 'Title',
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.grey, // Outline color
+                            width: 2, // Outline width
+                          ),
+                          borderRadius:
+                              BorderRadius.circular(8), // Rounded corners
+                        ),
+                      ),
+                    ),
+                    TextField(
+                      controller: _timeController,
+                      maxLength: 50,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                          suffixText: 'minutes ',
+                          labelText: 'Duration',
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.grey, // Outline color
+                              width: 2, // Outline width
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            // Rounded corners
+                          )),
+                    ),
+                    TextField(
+                      controller: _noteController,
+                      maxLength: 100,
+                      keyboardType: TextInputType.name,
+                      decoration: InputDecoration(
+                          suffixText: ' ',
+                          labelText: 'Note',
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.grey, // Outline color
+                              width: 2, // Outline width
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            // Rounded corners
+                          )),
+                    ),
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.grey,
+                                width: 2,
+                              ),
+                            ),
+                            child: DropdownButtonFormField<Category>(
+                              value: _selectedCategory,
+                              items: Category.values.map((category) {
+                                return DropdownMenuItem(
+                                  value: category,
+                                  child: Text(
+                                    category.name,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _selectedCategory = value;
+                                  });
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Category',
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        Expanded(
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.grey,
+                                width: 2,
+                              ),
+                            ),
+                            child: DropdownButtonFormField<Difficulty>(
+                              value: _selectedDifficulty,
+                              items: Difficulty.values.map((difficulty) {
+                                return DropdownMenuItem(
+                                  value: difficulty,
+                                  child: Text(
+                                    difficulty.name,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _selectedDifficulty = value;
+                                  });
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Difficulty',
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    ElevatedButton(
+                      onPressed: _submitActionData,
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.orange, // Set the background color
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(8), // Rounded corners
+                        ),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12), // Add padding
+                      ),
+                      child: const Text(
+                        "Save",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white, // Set the text color
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(
-                width: 16,
-              ),
-            ],
+            ),
           ),
-          TextField(
-            controller: _noteController,
-            maxLength: 100,
-            keyboardType: TextInputType.name,
-            decoration: const InputDecoration(label: Text('Notes')),
-          ),
-          const SizedBox(
-            height: 16,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              DropdownButton(
-                  value: _selectedCategory,
-                  items: Category.values
-                      .map((category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(
-                            category.name,
-                          )))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  }),
-              const SizedBox(
-                width: 5,
-              ),
-              DropdownButton(
-                  value: _selectedDifficulty,
-                  items: Difficulty.values
-                      .map((difficulty) => DropdownMenuItem(
-                          value: difficulty,
-                          child: Text(
-                            difficulty.name,
-                          )))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedDifficulty = value;
-                    });
-                  }),
-              const SizedBox(
-                width: 10,
-              ),
-            ],
-          ),
-          TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('cancle')),
-          ElevatedButton(
-            onPressed: _submitActionData,
-            child: const Text('Start Action'),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
 class MyRoom extends StatefulWidget {
-  const MyRoom({super.key});
+  const MyRoom(
+      {required this.onAddAction,
+      super.key}); // called at page controller line 44
+  final void Function(String rooms) onAddAction;
 
   @override
   State<MyRoom> createState() => _MyRoomState();
@@ -579,7 +1020,7 @@ class _MyRoomState extends State<MyRoom> {
   late int _totalExperience;
   late Level acc;
   late String room;
-  final User? user = Auth().currentUser;
+  final User? user = Auth(FirebaseAuth.instance).currentUser;
 
   @override
   void initState() {
@@ -593,49 +1034,288 @@ class _MyRoomState extends State<MyRoom> {
   }
 
   _loadFirestoreLevel() async {
-  final snap = await FirebaseFirestore.instance
+    final snap = await FirebaseFirestore.instance
         .collection('level')
         .where('email', isEqualTo: user?.email ?? 'User email')
         .withConverter(
-            fromFirestore: Level.fromFirestore, 
+            fromFirestore: Level.fromFirestore,
             toFirestore: (level, options) => level.toFirestore())
         .get();
-  for (var doc in snap.docs)  { 
-    final level = doc.data();
-    final totalExp = level.experience;
-    _totalExperience = totalExp;
-    _level = (totalExp / 1000).floorToDouble().round();
-    if (totalExp >= 1000) {
-      _exp = totalExp - 1000 * _level;
-    } else  {
-      print('asd');
-      _exp = totalExp;
+    for (var doc in snap.docs) {
+      final level = doc.data();
+      final totalExp = level.experience;
+      _totalExperience = totalExp;
+      if (totalExp <= 90) {
+        _level = 1 + (totalExp / 10).floorToDouble().round();
+      } else {
+        _level = ((totalExp - 90) / 100).floorToDouble().round() + 10;
+      }
+      if (totalExp > 90) {
+        _exp = (totalExp - 90) - 100 * (_level - 10);
+      } else {
+        _exp = totalExp - 10 * (_level - 1);
+      }
+      acc = level;
+      room = level.room;
     }
-    acc = level;
-    room = level.room;
-  }
-  setState(() {});
+    setState(() {});
   }
 
-
-  void _editRoom(String appliedRoom) async  {
+  void _editRoom(String appliedRoom) async {
     await FirebaseFirestore.instance.collection('level').doc(acc.id).update({
       "experience": _totalExperience,
       "email": user?.email ?? 'User email',
       "room": appliedRoom,
     });
-    print(room);
+  }
+
+  Widget _cardRoom(String roomStyle, int levelC) {
+    if (_level >= levelC) {
+      return Card(
+          child: Container(
+        child: TextButton(
+          child: Text(roomStyle),
+          onPressed: () {
+            _editRoom(roomStyle);
+            widget.onAddAction(roomStyle);
+            Navigator.pop(context);
+          },
+        ),
+        height: 70,
+      ));
+    } else {
+      return Card(
+          color: Colors.grey,
+          child: Container(
+            child: Center(
+                child: Opacity(
+                    opacity: 0.8,
+                    child: Text(
+                      'Unlocked at level ' + levelC.toString(),
+                    ))),
+            height: 70,
+          ));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: Text("Room Customization"),),
-      body: ListView(children: [
-        Card(child: TextButton(child: Text('Blue'), 
-          onPressed: () {
-            _editRoom('White');
-            Navigator.pop(context);
-          },))
-      ],),);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Room Customization"),
+      ),
+      body: ListView(
+        children: [
+          _cardRoom('White', 1),
+          _cardRoom('Blue', 5),
+          _cardRoom('Purple', 15),
+          _cardRoom('Green', 30),
+        ],
+      ),
+    );
+  }
+}
+
+class AdvancedLinearProgressIndicator extends StatefulWidget {
+  final double value;
+  final double minHeight;
+  final Color backgroundColor;
+  final List<Color> progressGradientColors;
+
+  AdvancedLinearProgressIndicator({
+    required this.value,
+    required this.minHeight,
+    required this.backgroundColor,
+    required this.progressGradientColors,
+  });
+
+  @override
+  _AdvancedLinearProgressIndicatorState createState() =>
+      _AdvancedLinearProgressIndicatorState();
+}
+
+class _AdvancedLinearProgressIndicatorState
+    extends State<AdvancedLinearProgressIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0, end: widget.value).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AdvancedLinearProgressIndicator oldWidget) {
+    if (oldWidget.value != widget.value) {
+      _progressAnimation = Tween<double>(
+        begin: oldWidget.value,
+        end: widget.value,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeOut,
+        ),
+      );
+      _animationController.forward(from: 0);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Container(
+          height: widget.minHeight,
+          decoration: BoxDecoration(
+            color: widget.backgroundColor,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Stack(
+              children: [
+                FractionallySizedBox(
+                  widthFactor: _progressAnimation.value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: widget.progressGradientColors,
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class AdvancedCircularProgressIndicator extends StatefulWidget {
+  final double value;
+  final double strokeWidth;
+  final Color backgroundColor;
+  final Color progressColor;
+  final double radius;
+  final double padding;
+
+  AdvancedCircularProgressIndicator({
+    required this.value,
+    this.strokeWidth = 3.0,
+    required this.backgroundColor,
+    required this.progressColor,
+    this.radius = 20,
+    this.padding = 8,
+  });
+
+  @override
+  _AdvancedCircularProgressIndicatorState createState() =>
+      _AdvancedCircularProgressIndicatorState();
+}
+
+class _AdvancedCircularProgressIndicatorState
+    extends State<AdvancedCircularProgressIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0, end: widget.value).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AdvancedCircularProgressIndicator oldWidget) {
+    if (oldWidget.value != widget.value) {
+      _progressAnimation = Tween<double>(
+        begin: oldWidget.value,
+        end: widget.value,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeOut,
+        ),
+      );
+      _animationController.forward(from: 0);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Container(
+          width: widget.radius * 2 + widget.padding * 2,
+          height: widget.radius * 2 + widget.padding * 2,
+          padding: EdgeInsets.all(widget.padding),
+          decoration: BoxDecoration(
+            color: widget.backgroundColor,
+            shape: BoxShape.circle,
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: widget.strokeWidth,
+                  value: _progressAnimation.value,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    widget.progressColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

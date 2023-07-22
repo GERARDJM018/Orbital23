@@ -10,53 +10,62 @@ class HabitTile extends StatelessWidget {
   final String habitId;
 
   const HabitTile({
-    super.key,
+    Key? key,
     required this.habitName,
     required this.habitCompleted,
     required this.onChanged,
     required this.settingsTapped,
     required this.deleteTapped,
-    required this.habitId
-  });
+    required this.habitId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Slidable(
-          endActionPane: ActionPane(
-            motion: StretchMotion(),
-            children: [
-              SlidableAction(
-                onPressed: settingsTapped,
-                backgroundColor: Colors.grey.shade800,
-                icon: Icons.settings,
-                borderRadius: BorderRadius.circular(12),
-              ), 
-              SlidableAction(
-                onPressed: deleteTapped,
-                backgroundColor: Colors.red.shade400,
-                icon: Icons.delete,
-                borderRadius: BorderRadius.circular(12),
-              )
-            ],
-          ),
-          child: Container(
-            padding: EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
+      padding: const EdgeInsets.all(8.0),
+      child: Slidable(
+        endActionPane: ActionPane(
+          motion: StretchMotion(),
+          children: [
+            SlidableAction(
+              onPressed: settingsTapped,
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+              icon: Icons.settings,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: habitCompleted,
-                  onChanged: onChanged,
-                ),
-                Text(habitName)
-              ],
+            SlidableAction(
+              onPressed: deleteTapped,
+              backgroundColor: Colors.red.shade400,
+              icon: Icons.delete,
+              borderRadius: BorderRadius.circular(12),
             ),
-          ),
-        ));
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(255, 255, 255, 255),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      activeColor: Colors.green,
+                      value: habitCompleted,
+                      onChanged: onChanged,
+                    ),
+                    Text(habitName),
+                  ],
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios),
+          ],
+        ),
+      ),
+    );
   }
 }

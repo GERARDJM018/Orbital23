@@ -7,8 +7,8 @@ import 'package:zenith/widgets/moodicon.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-//https://lottiefiles.com/search?q=happy+emotion&category=animations&animations-page=3
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 
 class StartPage extends StatefulWidget {
   @override
@@ -17,47 +17,128 @@ class StartPage extends StatefulWidget {
 
 class _StartPageState extends State<StartPage> {
   int numberOfDays = 0;
+  Timer? consecutiveDaysTimer;
+  String? selectedMood;
+  String? selectedMoodImage;
+  bool canSaveMood = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    calculateConsecutiveDays(); // Call the function whenever the dependencies change (e.g., when coming back to this page)
+    calculateWeekly();
+  }
 
   @override
   void initState() {
     calculateConsecutiveDays();
     calculateWeekly();
+    updateConsecutiveDays();
     super.initState();
+    moodCard = Provider.of<MoodCard>(context, listen: false);
+    consecutiveDaysTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      // Call the updateConsecutiveDays method every 10 seconds
+      updateConsecutiveDays();
+    });
+  }
+
+  @override
+  void dispose() {
+    // Cancel the timer when the widget is disposed to avoid memory leaks
+    consecutiveDaysTimer?.cancel();
+    super.dispose();
   }
 
   String _formatDate(DateTime date) {
     return date.toString().substring(0, 10);
   }
 
-  void calculateWeekly() async {
+  void updateConsecutiveDays() async {
+    String userId = getCurrentUserId();
+    // Get the reference to the user's mood data collection
+    CollectionReference userMoodsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('user_moods');
+
+    // Fetch data and cast to the correct type
     QuerySnapshot<Map<String, dynamic>> snapshot =
-        await FirebaseFirestore.instance.collection('user_moods').get();
+        await userMoodsRef.get() as QuerySnapshot<Map<String, dynamic>>;
+
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> moodDocs = snapshot.docs;
+    List<String> uniqueDates = [];
+
+    for (var moodDoc in moodDocs) {
+      DateTime currentDate = DateTime.parse(moodDoc['date']);
+      uniqueDates.add(_formatDate(currentDate));
+    }
+    uniqueDates.sort();
+
+    int consecutiveDays = 1;
+    if (uniqueDates.length == 0) {
+      consecutiveDays = 0;
+    } else if (DateTime.now()
+            .difference(DateTime.parse(uniqueDates[uniqueDates.length - 1]))
+            .inDays >=
+        2) {
+      consecutiveDays = 0;
+    } else {
+      for (int i = uniqueDates.length - 1; i > 0; i--) {
+        DateTime currentDate = DateTime.parse(uniqueDates[i]);
+        DateTime previousDate = DateTime.parse(uniqueDates[i - 1]);
+
+        // Check if the current date is consecutive to the previous date
+        if (currentDate.difference(previousDate).inDays == -1 ||
+            currentDate.difference(previousDate).inDays == 1) {
+          consecutiveDays++;
+        } else if (currentDate.difference(previousDate).inDays == 0) {
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+    setState(() {
+      numberOfDays = consecutiveDays;
+    });
+  }
+
+  void calculateWeekly() async {
+    String userId = getCurrentUserId();
+
+    // Get the reference to the user's mood data collection
+    CollectionReference userMoodsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('user_moods');
+
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await userMoodsRef.get() as QuerySnapshot<Map<String, dynamic>>;
 
     List<QueryDocumentSnapshot<Map<String, dynamic>>> moodDocs = snapshot.docs;
     DateTime currentDate = DateTime.now();
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> weeklyMood =
-        []; // list of moods with in a week
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> weeklyMood = [];
 
     for (var moodDoc in moodDocs) {
-      DateTime MoodDate = DateTime.parse(moodDoc['date']);
-      if (MoodDate.difference(currentDate) <= Duration(days: 7)) {
+      DateTime moodDate = DateTime.parse(moodDoc['date']);
+      // Check if the mood date is within the last 7 days from the current date
+      if (currentDate.difference(moodDate).inDays <= 7) {
         weeklyMood.add(moodDoc);
       }
     }
+
     List<String> moodString = [];
     for (var moodDoc in weeklyMood) {
-      String Mood = moodDoc['mood'];
-      moodString.add(Mood);
-      print(12345);
-      print(Mood);
+      String mood = moodDoc['mood'];
+      moodString.add(mood);
     }
+
     int happy = 0;
     int sad = 0;
     int angry = 0;
     int surprised = 0;
     int loving = 0;
     int scared = 0;
-    String highestMood;
 
     for (String mood in moodString) {
       if (mood == 'Happy') {
@@ -74,6 +155,8 @@ class _StartPageState extends State<StartPage> {
         scared++;
       }
     }
+
+    String highestMood;
     if (happy >= sad &&
         happy >= angry &&
         happy >= surprised &&
@@ -94,6 +177,7 @@ class _StartPageState extends State<StartPage> {
     } else {
       highestMood = 'scared';
     }
+
     if (highestMood == 'happy') {
       currentLottie = happyLottie;
     } else if (highestMood == 'sad') {
@@ -107,8 +191,6 @@ class _StartPageState extends State<StartPage> {
     } else {
       currentLottie = scaredLottie;
     }
-    print(currentLottie);
-    print(111);
   }
 
   LottieBuilder happyLottie = Lottie.network(
@@ -125,9 +207,28 @@ class _StartPageState extends State<StartPage> {
   LottieBuilder currentLottie =
       Lottie.asset('assets/surprised.json', animate: true);
 
+  String getCurrentUserId() {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return user.uid;
+    } else {
+      // If the user is not authenticated, handle the case accordingly
+      // For example, you might return a default or guest user ID.
+      return 'guest_user';
+    }
+  }
+
   void calculateConsecutiveDays() async {
+    String userId = getCurrentUserId();
+    // Get the reference to the user's mood data collection
+    CollectionReference userMoodsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('user_moods');
+
+    // Fetch data and cast to the correct type
     QuerySnapshot<Map<String, dynamic>> snapshot =
-        await FirebaseFirestore.instance.collection('user_moods').get();
+        await userMoodsRef.get() as QuerySnapshot<Map<String, dynamic>>;
 
     List<QueryDocumentSnapshot<Map<String, dynamic>>> moodDocs = snapshot.docs;
     List<String> uniqueDates = [];
@@ -139,37 +240,49 @@ class _StartPageState extends State<StartPage> {
     uniqueDates.sort();
 
     int consecutiveDays = 1;
-    if (DateTime.parse(uniqueDates[uniqueDates.length -
-            1]) == // check that the previous day is not empty
-        _formatDate(DateTime.now().add(const Duration(days: -1)))) {
-      print(_formatDate(DateTime.now().add(const Duration(days: -1))));
+    if (uniqueDates.length == 0) {
+      consecutiveDays = 0;
+    } else if (DateTime.now()
+            .difference(DateTime.parse(uniqueDates[uniqueDates.length - 1]))
+            .inDays >=
+        2) {
+      print(222222);
       consecutiveDays = 0;
     } else {
       for (int i = uniqueDates.length - 1; i > 0; i--) {
+        print(11111);
         //[2023-07-10, 2023-07-10, 2023-07-10, 2023-07-12, 2023-07-13, 2023-07-13, 2023-07-14, 2023-07-14]
         DateTime currentDate = DateTime.parse(uniqueDates[i]);
         DateTime previousDate = DateTime.parse(uniqueDates[i - 1]);
-        print(currentDate);
+
         // Check if the current date is consecutive to the previous date
 
         if (currentDate.difference(previousDate).inDays == -1 ||
             currentDate.difference(previousDate).inDays == 1) {
           consecutiveDays++;
           print(consecutiveDays);
+          print(22);
 
           // Update the longest consecutive streak if necessary
         } else if (currentDate.difference(previousDate).inDays == 0) {
+          print(consecutiveDays);
+          print(33);
           continue;
         } else {
+          print(44);
           break;
         }
       }
     }
-
     setState(() {
       numberOfDays = consecutiveDays;
-      print(numberOfDays);
     });
+
+    // Now, you can save the `consecutiveDays` value to the user's data, or use it as required.
+    // For example, if you have a User object representing the user's data, you can do:
+    // user.consecutiveDays = consecutiveDays;
+
+    // The setState() is not needed here since this function is not part of the UI.
   }
 
   bool isConsecutiveDay(DateTime currentDate, DateTime previousDate) {
@@ -186,32 +299,37 @@ class _StartPageState extends State<StartPage> {
 
   List<Activity> selectedActivities =
       []; // Temporary list to store selected activities
-  late MoodCard moodCard;
+  MoodCard moodCard = MoodCard();
   String? mood = '';
   String? image = '';
 
   int ontapcount = 0;
-  void toggleActivitySelection(int index) {
-    // Check if the activity is already selected
+  void _toggleActivitySelection(int index) {
     bool isSelected = act[index].selected;
-
-    // Check if the number of selected activities is already 5
     bool reachedMaxActivities = selectedActivities.length >= 5;
 
     setState(() {
       if (!isSelected && !reachedMaxActivities) {
-        // If the activity is not selected and not reached max limit, select it
         act[index].selected = true;
         selectedActivities.add(act[index]);
-        Provider.of<MoodCard>(context, listen: false).add(act[index]);
+        moodCard.add(act[index]); // uses the add from moodcard
       } else if (isSelected) {
-        // If the activity is already selected, deselect it
         act[index].selected = false;
         selectedActivities.remove(act[index]);
-        Provider.of<MoodCard>(context, listen: false).delete(act[index]);
+        moodCard.delete(act[index]);
       }
-      // Otherwise, do nothing as the max limit is reached
+
+      // Update the mood and activity selections
+      bool moodSelected = moods.any((mood) => mood.iselected);
+      bool activitiesSelected = selectedActivities.isNotEmpty;
+      canSaveMood = moodSelected && activitiesSelected;
+
+      // Reset the ontapcount when no mood is selected
+      if (!moodSelected) {
+        ontapcount = 0;
+      }
     });
+
     calculateConsecutiveDays();
     calculateWeekly();
   }
@@ -248,54 +366,70 @@ class _StartPageState extends State<StartPage> {
         child: Column(
           children: <Widget>[
             SizedBox(
-              height: 25,
+              height: MediaQuery.of(context).size.height * 0.06,
             ),
-            Row(
-              children: [
-                Spacer(),
-                Text(
-                  "MOODFIT",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(width: 75),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pushNamed('/home_screen');
-                  },
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 27,
-                        child: CircleAvatar(
-                          child: Icon(Icons.dashboard,
-                              color: Colors.green, size: 30),
-                          radius: 25,
-                          backgroundColor: Colors.white,
-                        ),
-                        backgroundColor: Colors.green,
-                      ),
-                      SizedBox(height: 2.5),
-                      Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.green,
-                          fontSize: 15,
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                SizedBox(width: 10),
-              ],
-            ),
-            Container(height: 150, child: currentLottie),
             Container(
-              width: 350,
-              height: 100,
+              // Add padding for better spacing
+              child: Row(
+                children: [
+                  Expanded(
+                    flex:
+                        1, // Flex factor 1 to occupy the remaining space on the left
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pushNamed('/home_screen');
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(
+                            radius: 27,
+                            child: CircleAvatar(
+                              child: Icon(Icons.dashboard,
+                                  color: const Color.fromARGB(255, 56, 62, 56),
+                                  size: 30),
+                              radius: 25,
+                              backgroundColor: Colors.white,
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                          SizedBox(height: 2.5),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex:
+                        2, // Flex factor 2 to occupy the remaining space in the middle
+                    child: Text(
+                      "MOODFIT",
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Expanded(
+                    flex:
+                        1, // Flex factor 1 to occupy the remaining space on the right
+                    child: Container(),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Container(
+                height: 150,
+                child: currentLottie,
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              height: 80,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                    20), // Adjust the radius as per your preference
+                borderRadius: BorderRadius.circular(20),
                 color: Color.fromARGB(255, 205, 225, 231),
                 border: Border.all(
                   color: Colors.black,
@@ -317,13 +451,15 @@ class _StartPageState extends State<StartPage> {
                         text: '  $numberOfDays',
                         style: TextStyle(
                           fontSize: 30,
-                          // Increase the font size for the number of days
                         ),
                       ),
                       TextSpan(
-                          text: '  days in a row',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.normal)),
+                        text: '  days in a row',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -361,15 +497,23 @@ class _StartPageState extends State<StartPage> {
                               setState(() {
                                 mood = moods[index].name;
                                 image = moods[index].moodimage;
+                                selectedMood = moods[index].name;
+                                selectedMoodImage = moods[index].moodimage;
                                 moods[index].iselected = true;
                                 ontapcount = ontapcount + 1;
+                                if (selectedActivities.isNotEmpty) {
+                                  canSaveMood = true;
+                                }
                               }),
                             }
                           else if (moods[index].iselected)
                             {
                               setState(() {
                                 moods[index].iselected = false;
+                                selectedMood = null;
+                                selectedMoodImage = null;
                                 ontapcount = 0;
+                                canSaveMood = false;
                               }),
                             }
                         },
@@ -404,7 +548,7 @@ class _StartPageState extends State<StartPage> {
                           act[index].selected ? Colors.black : Colors.white,
                         ),
                         onTap: () {
-                          toggleActivitySelection(index);
+                          _toggleActivitySelection(index);
                         },
                       ),
                     ],
@@ -413,60 +557,102 @@ class _StartPageState extends State<StartPage> {
               ),
             ),
             SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pushNamed('/home_screen');
-                  },
-                  child: Column(
-                    children: [],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () async {
-                    setState(() {
-                      moodCard = Provider.of<MoodCard>(context, listen: false);
-                      moodCard.activities.clear();
-                      selectedActivities.clear();
-                      moodCard.addPlace(
-                        DateTime.now().toString(),
-                        mood!,
-                        image!,
-                        moodCard.activityimage.toSet().join('_'),
-                        moodCard.activityname.toSet().join('_'),
-                      );
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.8,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  GestureDetector(
+                    onTap: () {
                       Navigator.of(context).pushNamed('/home_screen');
-                    });
-                    calculateConsecutiveDays();
-                    calculateWeekly();
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        child: CircleAvatar(
-                          child: Icon(Icons.save_alt,
-                              color: Colors.white, size: 30),
-                          radius: 30,
-                          backgroundColor: Color.fromARGB(255, 3, 124, 58),
-                        ),
-                        backgroundColor: Colors.white,
-                      ),
-                      Text(
-                        'Save',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: const Color.fromARGB(255, 37, 63, 84),
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
+                    },
+                    child: Column(
+                      children: [],
+                    ),
                   ),
-                ),
-              ],
+                  GestureDetector(
+                    onTap: () async {
+                      // Retrieve the current user and user ID
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        // Handle case when the user is not authenticated
+                        return;
+                      }
+                      final userId = user.uid;
+
+                      if (canSaveMood) {
+                        try {
+                          // The rest of the data saving process...
+                          // Save the mood data under the "user_moods" collection with the user's ID as the document ID
+
+                          moodCard.addPlace(
+                            userId,
+                            DateTime.now().toString(),
+                            mood!,
+                            image!,
+                            moodCard.activityimage.toSet().join('_'),
+                            moodCard.activityname.toSet().join('_'),
+                          );
+
+                          // Navigate to the home screen after saving
+                          Navigator.of(context).pushNamed('/home_screen');
+                          for (int i = 0; i < act.length; i++) {
+                            act[i].selected = false;
+                          }
+
+                          for (int i = 0; i < moods.length; i++) {
+                            moods[i].iselected = false;
+                          }
+                          ontapcount = 0;
+                          selectedMood = null;
+                          selectedMoodImage = null;
+
+                          calculateConsecutiveDays();
+                          calculateWeekly();
+                        } catch (e) {
+                          // Handle any errors that occur during the data saving process
+                          print('Error saving mood data: $e');
+                        }
+                      } else {
+                        // Show a friendly instruction using SnackBar
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                "Please pick a mood and at least one activity!"),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 55,
+                          height: 55,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: canSaveMood
+                                ? Colors.orange
+                                : Colors
+                                    .grey, // Disable the button if canSaveMood is false
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.save_alt,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 15,
             )
           ],
         ),

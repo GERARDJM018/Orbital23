@@ -1,19 +1,17 @@
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 
-enum Category { study, goOut, workout, eat, sleep, leisure }
+enum Category { study, workout, rest, others}
 
-enum Difficulty { easy, medium, hard, superHard }
+enum Difficulty { easy, medium, hard}
 
 const uuid = Uuid();
 
 const categoryIcons = {
   Category.study: Icons.plus_one,
-  Category.goOut: Icons.plus_one,
   Category.workout: Icons.plus_one,
-  Category.eat: Icons.plus_one,
-  Category.sleep: Icons.plus_one,
-  Category.leisure: Icons.plus_one
+  Category.rest: Icons.plus_one,
+  Category.others: Icons.plus_one
 };
 
 class Actions1 {

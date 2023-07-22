@@ -5,9 +5,9 @@ import 'package:get/get.dart';
 import 'package:zenith/pages/home_page.dart';
 
 void main() async {
+  final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    );
+  await Firebase.initializeApp();
   Get.put(TimerController());
   runApp(MyApp());
 }
@@ -20,15 +20,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData().copyWith(
-            useMaterial3: false,
-            appBarTheme: const AppBarTheme().copyWith(
-                backgroundColor: const Color.fromARGB(145, 255, 255, 255),
-                foregroundColor: Colors.black,
-                titleSpacing: 10,),
-                ),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        fontFamily: 'Roboto',
+      ).copyWith(
+        useMaterial3: false,
+        appBarTheme: const AppBarTheme().copyWith(
+          backgroundColor: const Color.fromARGB(145, 255, 255, 255),
+          foregroundColor: Colors.black,
+          titleSpacing: 10,
+        ),
+      ),
       home: const WidgetTree(),
-      );
+    );
   }
 }
-

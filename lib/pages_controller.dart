@@ -4,7 +4,8 @@ import 'package:zenith/pages/schedule_page.dart';
 import 'package:zenith/pages/mood.dart';
 import 'package:zenith/pages/statistics.dart';
 import 'package:zenith/pages/setting.dart';
-import 'package:zenith/pages/webview.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class NavigationWrapper extends StatefulWidget {
@@ -16,7 +17,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    HomePage(),
+    HomePage(FirebaseAuth.instance, FirebaseFirestore.instance),
     const SchedulePage(),
     MyMood(),
     Statistics(),

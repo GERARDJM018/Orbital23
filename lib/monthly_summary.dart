@@ -21,8 +21,8 @@ class MonthlySummary extends StatelessWidget {
         endDate: DateTime.now().add(Duration(days: 0)),
         datasets: datasets,
         colorMode: ColorMode.color,
-        defaultColor: Colors.grey[200],
-        textColor: Colors.white,
+        defaultColor: Color.fromARGB(255, 254, 254, 254),
+        textColor: Color.fromARGB(255, 84, 81, 81),
         showColorTip: false,
         showText: true,
         scrollable: true,
@@ -44,6 +44,6 @@ class MonthlySummary extends StatelessWidget {
               .showSnackBar(SnackBar(content: Text(value.toString())));
         },
       ),
-    ); 
+    );
   }
 }

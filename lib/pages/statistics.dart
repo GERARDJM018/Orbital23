@@ -94,7 +94,7 @@ class _StatisticsState extends State<Statistics> {
         final percentForEachDay = <DateTime, int>{
           DateTime(year, month, day): (parsedPercentage * 10).toInt(),
         };
-        print(parsedPercentage * 10);
+
         heatMapDataSet.addEntries(percentForEachDay.entries); //here
 
         // Use the parsedPercentage variable as needed
@@ -107,8 +107,15 @@ class _StatisticsState extends State<Statistics> {
 
   void checkBoxTapped(bool? value, String habitId) async {
     String userID = getUserId();
+    // Get the current date in "yyyy-mm-dd" format
+    String currentDateStr = convertDateTimeToString(DateTime.now());
+
     DocumentReference userDoc = firestore.collection("users").doc(userID);
-    DocumentReference habit = userDoc.collection("habits").doc(habitId);
+    DocumentReference habit = userDoc
+        .collection("habits")
+        .doc(currentDateStr)
+        .collection("habits")
+        .doc(habitId);
 
     DocumentSnapshot<Object?> snapshot = await habit.get();
     if (snapshot.exists) {
@@ -159,10 +166,17 @@ class _StatisticsState extends State<Statistics> {
 
   void deleteHabit(String docId) async {
     String userID = getUserId();
+    // Get the current date in "yyyy-mm-dd" format
+    String currentDateStr = convertDateTimeToString(DateTime.now());
+
     DocumentReference userDoc = firestore.collection("users").doc(userID);
-    DocumentReference docRef = userDoc.collection("habits").doc(docId);
+    CollectionReference habitsCollection =
+        userDoc.collection("habits").doc(currentDateStr).collection("habits");
+    DocumentReference docRef = habitsCollection.doc(docId);
+
     await docRef.delete();
     await calculateHeatMapData();
+    calculateHabitPercentage();
 
     setState(() {});
   }
@@ -177,20 +191,45 @@ class _StatisticsState extends State<Statistics> {
 
   final _newHabitNameController = TextEditingController();
 
-  void saveNewHabit2() async {
+  void saveNewHabit2(BuildContext context) async {
     String userID = getUserId();
     DocumentReference userDoc = firestore.collection("users").doc(userID);
-    CollectionReference habits = userDoc.collection("habits");
+    CollectionReference habitsCollection = userDoc.collection("habits");
 
-    await habits.add({
+    // Get the current date in "yyyy-mm-dd" format
+    String currentDateStr = convertDateTimeToString(DateTime.now());
+
+    // Create a new habit with the name and completion status
+    Map<String, dynamic> newHabitData = {
       "habit": [_newHabitNameController.text, false],
-    });
+    };
+
+    // Check if the habit subcollection for the current date exists
+    DocumentSnapshot<Object?> dateSnapshot =
+        await habitsCollection.doc(currentDateStr).get();
+
+    if (dateSnapshot.exists) {
+      // If the subcollection for the current date exists, add a new habit document to it
+      await habitsCollection
+          .doc(currentDateStr)
+          .collection("habits")
+          .add(newHabitData);
+    } else {
+      // If the subcollection for the current date doesn't exist, create it and add a new habit document to it
+
+      await habitsCollection
+          .doc(currentDateStr)
+          .collection("habits")
+          .add(newHabitData);
+    }
+
     _newHabitNameController.clear();
+    calculateHabitPercentage();
 
-    // pop dialog box
+    // Pop dialog box
     Navigator.of(context).pop();
-    await calculateHeatMapData();
 
+    await calculateHeatMapData();
     setState(() {});
   }
 
@@ -202,24 +241,24 @@ class _StatisticsState extends State<Statistics> {
     Navigator.of(context).pop();
   }
 
-  void createNewHabit() {
+  void createNewHabit(BuildContext context) {
     showDialog(
-        context: context,
-        builder: (context) {
-          return EnterNewHabitBox(
-            controller: _newHabitNameController,
-            hintText: 'Enter Habit Name...',
-            onSave: saveNewHabit2,
-            onCancel: cancelNewHabit,
-          );
-        });
+      context: context,
+      builder: (context) {
+        return EnterNewHabitBox(
+          controller: _newHabitNameController,
+          hintText: 'Enter Habit Name...',
+          onSave: () => saveNewHabit2(context), // Pass the context
+          onCancel: cancelNewHabit,
+        );
+      },
+    );
   }
 
   String getUserId() {
     // new change
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      print(user);
       return user.uid;
     }
     // If the user is not authenticated or null, handle the case accordingly
@@ -245,29 +284,32 @@ class _StatisticsState extends State<Statistics> {
   Future<void> calculateHabitPercentage() async {
     int countCompleted = 0;
     String userID = getUserId();
+    // Get the current date in "yyyy-mm-dd" format
+    String currentDateStr = convertDateTimeToString(DateTime.now());
+
     DocumentReference userDoc = firestore.collection("users").doc(userID);
-    CollectionReference habitsCollection = userDoc.collection("habits");
+    CollectionReference habitsCollection =
+        userDoc.collection("habits").doc(currentDateStr).collection("habits");
 
-    QuerySnapshot snapshot = await habitsCollection.get();
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await habitsCollection.get() as QuerySnapshot<Map<String, dynamic>>;
 
-    for (QueryDocumentSnapshot habitSnapshot in snapshot.docs) {
-      Map<String, dynamic> habitData =
-          habitSnapshot.data() as Map<String, dynamic>;
+    for (QueryDocumentSnapshot<Map<String, dynamic>> habitSnapshot
+        in snapshot.docs) {
+      Map<String, dynamic> habitData = habitSnapshot.data();
+      List<dynamic> habitList = habitData["habit"] as List<dynamic>;
 
-      if (habitData.containsKey("habit")) {
-        List<dynamic> habitList = habitData["habit"] as List<dynamic>;
-
-        if (habitList.length >= 2) {
-          bool habitCompleted = habitList[1];
-          // Perform your desired operations with habitCompleted value
-          if (habitCompleted) {
-            countCompleted++;
-          }
+      if (habitList.length >= 2) {
+        bool habitCompleted = habitList[1];
+        // Perform your desired operations with habitCompleted value
+        if (habitCompleted) {
+          countCompleted++;
         }
       }
     }
 
-    double completionPercentage = length == 0 ? 0.0 : (countCompleted / length);
+    double completionPercentage =
+        snapshot.size == 0 ? 0.0 : (countCompleted / snapshot.size);
     double overallCompletionPercentage = double.parse(
       completionPercentage.toStringAsFixed(1),
     );
@@ -284,21 +326,22 @@ class _StatisticsState extends State<Statistics> {
     });
   }
 
-  Stream<QuerySnapshot<Object?>> streamData() {
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamData() {
     String userID = getUserId();
+    // Get the current date in "yyyy-mm-dd" format
+    String currentDateStr = convertDateTimeToString(DateTime.now());
+
     CollectionReference habits =
         firestore.collection("users").doc(userID).collection("habits");
-    calculateHabitPercentage();
-    return habits.snapshots();
+
+    // Listen to the "habits" subcollection for the current date only
+    return habits.doc(currentDateStr).collection("habits").snapshots();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[300],
-      floatingActionButton: MyFloatingActionButton(
-        onPressed: createNewHabit,
-      ),
       body: StreamBuilder<QuerySnapshot<Object?>>(
         stream: streamData(),
         builder: (context, snapshot) {
@@ -321,47 +364,81 @@ class _StatisticsState extends State<Statistics> {
               }
               firstLoginDate = dateSnapshot.data;
 
-              return ListView(
-                children: [
-                  MonthlySummary(
-                    datasets: heatMapDataSet,
-                    startDate: convertDateTimeToString(firstLoginDate!),
-                  ),
-                  LinearPercentIndicator(
-                    barRadius: Radius.circular(30),
-                    lineHeight: 15,
-                    width: 410,
-                    percent: overallCompletionPercentage,
-                    progressColor: Color.fromARGB(255, 109, 203, 167),
-                    backgroundColor: Color.fromARGB(255, 251, 251, 251),
-                    center: Text(
-                      (overallCompletionPercentage * 100).toString(),
-                      style: new TextStyle(
-                          fontSize: 12.0, fontWeight: FontWeight.bold),
+              return SafeArea(
+                child: Stack(
+                  children: [
+                    ListView(
+                      children: [
+                        MonthlySummary(
+                          datasets: heatMapDataSet,
+                          startDate: convertDateTimeToString(
+                              firstLoginDate!.subtract(Duration(days: 100))),
+                        ),
+                        Container(
+                          width: MediaQuery.of(context).size.width,
+                          child: LinearPercentIndicator(
+                            linearStrokeCap: LinearStrokeCap
+                                .round, // Use round stroke caps for a thicker line
+
+                            barRadius: Radius.circular(5),
+                            lineHeight: 20,
+                            width: MediaQuery.of(context).size.width,
+                            percent: overallCompletionPercentage,
+                            progressColor: Color.fromARGB(255, 109, 203, 167),
+                            backgroundColor: Color.fromARGB(255, 251, 251, 251),
+                            center: Text(
+                              (overallCompletionPercentage * 100).toString(),
+                              style: new TextStyle(
+                                fontSize: 12.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: listAllhabits.length,
+                          itemBuilder: (context, index) {
+                            return HabitTile(
+                              habitName:
+                                  "${(listAllhabits[index].data() as Map<String, dynamic>)["habit"][0]}"
+                                      .toString(),
+                              habitCompleted: (listAllhabits[index].data()
+                                  as Map<String, dynamic>)["habit"][1],
+                              onChanged: (value) => checkBoxTapped(
+                                  value, listAllhabits[index].id),
+                              settingsTapped: (context) =>
+                                  openHabitSettings(listAllhabits[index].id),
+                              deleteTapped: (context) =>
+                                  deleteHabit(listAllhabits[index].id),
+                              habitId: listAllhabits[index].id,
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                  ),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: listAllhabits.length,
-                    itemBuilder: (context, index) {
-                      return HabitTile(
-                        habitName:
-                            "${(listAllhabits[index].data() as Map<String, dynamic>)["habit"][0]}"
-                                .toString(),
-                        habitCompleted: (listAllhabits[index].data()
-                            as Map<String, dynamic>)["habit"][1],
-                        onChanged: (value) =>
-                            checkBoxTapped(value, listAllhabits[index].id),
-                        settingsTapped: (context) =>
-                            openHabitSettings(listAllhabits[index].id),
-                        deleteTapped: (context) =>
-                            deleteHabit(listAllhabits[index].id),
-                        habitId: listAllhabits[index].id,
-                      );
-                    },
-                  ),
-                ],
+                    Positioned(
+                      bottom:
+                          20.0, // Adjust the value to position the button as per your requirement
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: FloatingActionButton(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15)),
+                          backgroundColor: Colors.orange,
+                          onPressed: () {
+                            createNewHabit(context);
+                          },
+                          child: Icon(
+                            Icons.add,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           );

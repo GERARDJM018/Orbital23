@@ -25,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> signInWithEmailAndPassword() async {
     print(11);
     try {
-      await Auth().signInWithEmailAndPassword(
+      await Auth(FirebaseAuth.instance).signInWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> createUserWithEmailAndPassword() async {
     try {
-      await Auth().createUserWithEmailAndPassword(
+      await Auth(FirebaseAuth.instance).createUserWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
@@ -68,7 +68,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _errorMessage() {
-    print(222);
     if (errorMessage == 'success') {
       String email = _controllerEmail.text;
       return Text(
@@ -161,26 +160,30 @@ class _LoginPageState extends State<LoginPage> {
                       : createUserWithEmailAndPassword,
                 ),
 
-                const SizedBox(height: 50),
-                Text('aa'),
-
                 // not a member? register now
                 Row(
                   // register now
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Not a member?',
+                      isLogin ? 'Not a member?' : 'Already have an account?',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
-                    const SizedBox(width: 4), //log in or register
-                    const Text(
-                      'Register now',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    const SizedBox(width: 4),
+                    TextButton(
+                        onPressed: () {
+                          setState(() {
+                            isLogin = !isLogin;
+                          });
+                        },
+                        child: Text(
+                          isLogin ? 'Register now' : 'Login now',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )),
+                    //log in or register
                   ],
                 )
               ],
@@ -206,7 +209,7 @@ class _ResetPageState extends State<ResetPage> {
 
   Future<void> resetPassword() async {
     try {
-      await Auth().resetPassword(
+      await Auth(FirebaseAuth.instance).resetPassword(
         // change
         email: _controllerEmail.text,
       );

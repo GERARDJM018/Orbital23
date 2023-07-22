@@ -7,10 +7,8 @@ import 'package:zenith/widgets/moodicon.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-//394
-
-//https://lottiefiles.com/search?q=happy+emotion&category=animations&animations-page=3
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 
 class StartPage extends StatefulWidget {
   @override
@@ -19,48 +17,128 @@ class StartPage extends StatefulWidget {
 
 class _StartPageState extends State<StartPage> {
   int numberOfDays = 0;
+  Timer? consecutiveDaysTimer;
   String? selectedMood;
   String? selectedMoodImage;
   bool canSaveMood = false;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    calculateConsecutiveDays(); // Call the function whenever the dependencies change (e.g., when coming back to this page)
+    calculateWeekly();
+  }
+
+  @override
   void initState() {
     calculateConsecutiveDays();
     calculateWeekly();
+    updateConsecutiveDays();
     super.initState();
+    moodCard = Provider.of<MoodCard>(context, listen: false);
+    consecutiveDaysTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      // Call the updateConsecutiveDays method every 10 seconds
+      updateConsecutiveDays();
+    });
+  }
+
+  @override
+  void dispose() {
+    // Cancel the timer when the widget is disposed to avoid memory leaks
+    consecutiveDaysTimer?.cancel();
+    super.dispose();
   }
 
   String _formatDate(DateTime date) {
     return date.toString().substring(0, 10);
   }
 
-  void calculateWeekly() async {
+  void updateConsecutiveDays() async {
+    String userId = getCurrentUserId();
+    // Get the reference to the user's mood data collection
+    CollectionReference userMoodsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('user_moods');
+
+    // Fetch data and cast to the correct type
     QuerySnapshot<Map<String, dynamic>> snapshot =
-        await FirebaseFirestore.instance.collection('user_moods').get();
+        await userMoodsRef.get() as QuerySnapshot<Map<String, dynamic>>;
+
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> moodDocs = snapshot.docs;
+    List<String> uniqueDates = [];
+
+    for (var moodDoc in moodDocs) {
+      DateTime currentDate = DateTime.parse(moodDoc['date']);
+      uniqueDates.add(_formatDate(currentDate));
+    }
+    uniqueDates.sort();
+
+    int consecutiveDays = 1;
+    if (uniqueDates.length == 0) {
+      consecutiveDays = 0;
+    } else if (DateTime.now()
+            .difference(DateTime.parse(uniqueDates[uniqueDates.length - 1]))
+            .inDays >=
+        2) {
+      consecutiveDays = 0;
+    } else {
+      for (int i = uniqueDates.length - 1; i > 0; i--) {
+        DateTime currentDate = DateTime.parse(uniqueDates[i]);
+        DateTime previousDate = DateTime.parse(uniqueDates[i - 1]);
+
+        // Check if the current date is consecutive to the previous date
+        if (currentDate.difference(previousDate).inDays == -1 ||
+            currentDate.difference(previousDate).inDays == 1) {
+          consecutiveDays++;
+        } else if (currentDate.difference(previousDate).inDays == 0) {
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+    setState(() {
+      numberOfDays = consecutiveDays;
+    });
+  }
+
+  void calculateWeekly() async {
+    String userId = getCurrentUserId();
+
+    // Get the reference to the user's mood data collection
+    CollectionReference userMoodsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('user_moods');
+
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await userMoodsRef.get() as QuerySnapshot<Map<String, dynamic>>;
 
     List<QueryDocumentSnapshot<Map<String, dynamic>>> moodDocs = snapshot.docs;
     DateTime currentDate = DateTime.now();
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> weeklyMood =
-        []; // list of moods with in a week
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> weeklyMood = [];
 
     for (var moodDoc in moodDocs) {
-      DateTime MoodDate = DateTime.parse(moodDoc['date']);
-      if (MoodDate.difference(currentDate) <= Duration(days: 7)) {
+      DateTime moodDate = DateTime.parse(moodDoc['date']);
+      // Check if the mood date is within the last 7 days from the current date
+      if (currentDate.difference(moodDate).inDays <= 7) {
         weeklyMood.add(moodDoc);
       }
     }
+
     List<String> moodString = [];
     for (var moodDoc in weeklyMood) {
-      String Mood = moodDoc['mood'];
-      moodString.add(Mood);
+      String mood = moodDoc['mood'];
+      moodString.add(mood);
     }
+
     int happy = 0;
     int sad = 0;
     int angry = 0;
     int surprised = 0;
     int loving = 0;
     int scared = 0;
-    String highestMood;
 
     for (String mood in moodString) {
       if (mood == 'Happy') {
@@ -77,6 +155,8 @@ class _StartPageState extends State<StartPage> {
         scared++;
       }
     }
+
+    String highestMood;
     if (happy >= sad &&
         happy >= angry &&
         happy >= surprised &&
@@ -97,6 +177,7 @@ class _StartPageState extends State<StartPage> {
     } else {
       highestMood = 'scared';
     }
+
     if (highestMood == 'happy') {
       currentLottie = happyLottie;
     } else if (highestMood == 'sad') {
@@ -110,8 +191,6 @@ class _StartPageState extends State<StartPage> {
     } else {
       currentLottie = scaredLottie;
     }
-    print(currentLottie);
-    print(111);
   }
 
   LottieBuilder happyLottie = Lottie.network(
@@ -128,9 +207,28 @@ class _StartPageState extends State<StartPage> {
   LottieBuilder currentLottie =
       Lottie.asset('assets/surprised.json', animate: true);
 
+  String getCurrentUserId() {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return user.uid;
+    } else {
+      // If the user is not authenticated, handle the case accordingly
+      // For example, you might return a default or guest user ID.
+      return 'guest_user';
+    }
+  }
+
   void calculateConsecutiveDays() async {
+    String userId = getCurrentUserId();
+    // Get the reference to the user's mood data collection
+    CollectionReference userMoodsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('user_moods');
+
+    // Fetch data and cast to the correct type
     QuerySnapshot<Map<String, dynamic>> snapshot =
-        await FirebaseFirestore.instance.collection('user_moods').get();
+        await userMoodsRef.get() as QuerySnapshot<Map<String, dynamic>>;
 
     List<QueryDocumentSnapshot<Map<String, dynamic>>> moodDocs = snapshot.docs;
     List<String> uniqueDates = [];
@@ -144,37 +242,47 @@ class _StartPageState extends State<StartPage> {
     int consecutiveDays = 1;
     if (uniqueDates.length == 0) {
       consecutiveDays = 0;
-    } else if (DateTime.parse(uniqueDates[uniqueDates.length -
-            1]) == // check that the previous day is not empty
-        _formatDate(DateTime.now().add(const Duration(days: -1)))) {
-      print(_formatDate(DateTime.now().add(const Duration(days: -1))));
+    } else if (DateTime.now()
+            .difference(DateTime.parse(uniqueDates[uniqueDates.length - 1]))
+            .inDays >=
+        2) {
+      print(222222);
       consecutiveDays = 0;
     } else {
       for (int i = uniqueDates.length - 1; i > 0; i--) {
+        print(11111);
         //[2023-07-10, 2023-07-10, 2023-07-10, 2023-07-12, 2023-07-13, 2023-07-13, 2023-07-14, 2023-07-14]
         DateTime currentDate = DateTime.parse(uniqueDates[i]);
         DateTime previousDate = DateTime.parse(uniqueDates[i - 1]);
-        print(currentDate);
+
         // Check if the current date is consecutive to the previous date
 
         if (currentDate.difference(previousDate).inDays == -1 ||
             currentDate.difference(previousDate).inDays == 1) {
           consecutiveDays++;
           print(consecutiveDays);
+          print(22);
 
           // Update the longest consecutive streak if necessary
         } else if (currentDate.difference(previousDate).inDays == 0) {
+          print(consecutiveDays);
+          print(33);
           continue;
         } else {
+          print(44);
           break;
         }
       }
     }
-
     setState(() {
       numberOfDays = consecutiveDays;
-      print(numberOfDays);
     });
+
+    // Now, you can save the `consecutiveDays` value to the user's data, or use it as required.
+    // For example, if you have a User object representing the user's data, you can do:
+    // user.consecutiveDays = consecutiveDays;
+
+    // The setState() is not needed here since this function is not part of the UI.
   }
 
   bool isConsecutiveDay(DateTime currentDate, DateTime previousDate) {
@@ -191,7 +299,7 @@ class _StartPageState extends State<StartPage> {
 
   List<Activity> selectedActivities =
       []; // Temporary list to store selected activities
-  late MoodCard moodCard;
+  MoodCard moodCard = MoodCard();
   String? mood = '';
   String? image = '';
 
@@ -204,11 +312,11 @@ class _StartPageState extends State<StartPage> {
       if (!isSelected && !reachedMaxActivities) {
         act[index].selected = true;
         selectedActivities.add(act[index]);
-        Provider.of<MoodCard>(context, listen: false).add(act[index]);
+        moodCard.add(act[index]); // uses the add from moodcard
       } else if (isSelected) {
         act[index].selected = false;
         selectedActivities.remove(act[index]);
-        Provider.of<MoodCard>(context, listen: false).delete(act[index]);
+        moodCard.delete(act[index]);
       }
 
       // Update the mood and activity selections
@@ -464,25 +572,47 @@ class _StartPageState extends State<StartPage> {
                   ),
                   GestureDetector(
                     onTap: () async {
+                      // Retrieve the current user and user ID
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        // Handle case when the user is not authenticated
+                        return;
+                      }
+                      final userId = user.uid;
+
                       if (canSaveMood) {
-                        print(12345);
-                        print(selectedMood);
-                        setState(() {
-                          moodCard =
-                              Provider.of<MoodCard>(context, listen: false);
-                          moodCard.activities.clear();
-                          selectedActivities.clear();
+                        try {
+                          // The rest of the data saving process...
+                          // Save the mood data under the "user_moods" collection with the user's ID as the document ID
+
                           moodCard.addPlace(
+                            userId,
                             DateTime.now().toString(),
-                            selectedMood!,
-                            selectedMoodImage!,
+                            mood!,
+                            image!,
                             moodCard.activityimage.toSet().join('_'),
                             moodCard.activityname.toSet().join('_'),
                           );
+
+                          // Navigate to the home screen after saving
                           Navigator.of(context).pushNamed('/home_screen');
-                        });
-                        calculateConsecutiveDays();
-                        calculateWeekly();
+                          for (int i = 0; i < act.length; i++) {
+                            act[i].selected = false;
+                          }
+
+                          for (int i = 0; i < moods.length; i++) {
+                            moods[i].iselected = false;
+                          }
+                          ontapcount = 0;
+                          selectedMood = null;
+                          selectedMoodImage = null;
+
+                          calculateConsecutiveDays();
+                          calculateWeekly();
+                        } catch (e) {
+                          // Handle any errors that occur during the data saving process
+                          print('Error saving mood data: $e');
+                        }
                       } else {
                         // Show a friendly instruction using SnackBar
                         ScaffoldMessenger.of(context).showSnackBar(

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:zenith/pages/home_page.dart';
 
 void main() async {
+  final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   Get.put(TimerController());

@@ -5,6 +5,7 @@ import 'package:zenith/widgets/mooddaycard.dart';
 import 'package:provider/provider.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -13,6 +14,18 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool loader = false;
+  late String userId;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // Handle case when the user is not authenticated
+      return;
+    }
+    userId = user.uid;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             body: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(userId) // Use the userId to get the specific user's data
                   .collection('user_moods')
                   .snapshots(),
               builder: (context, snapshot) {
@@ -67,16 +82,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       return SizedBox.shrink();
                     }
 
-                    var imageString = data['actimage'];
+                    var imageString = data[
+                        'actimage']; // data['actimage'] is empty, find who initialized it
                     List<String> img = [];
                     if (imageString != null) {
                       img = imageString.split('_');
                     }
+
                     var nameString = data['actname'];
                     List<String> name = [];
                     if (nameString != null) {
                       name = nameString.split('_');
                     }
+
                     moodCardProvider.actiname.addAll(name);
 
                     moodCardProvider.data.add(
@@ -116,15 +134,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         Colors.white),
                       ),
                     );
-                    if (doc.id == null) {
-                      print('the problem is with the id');
-                    }
+                    if (doc.id == null) {}
+
                     return MoodDay(
+                      userId,
                       doc.id,
                       data['image'],
                       data['date'],
                       data['mood'],
-                      img.toList(),
+                      img.toList(), //wrong
                       name.toList(),
                     );
                   },

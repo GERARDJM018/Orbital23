@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:zenith/class/level.dart';
-import 'package:flare_flutter/flare_actor.dart';
 
 //line 406
 
@@ -33,6 +32,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool isLoading = true;
+  bool isAnimationRunning = false;
   int updatedFinishedActions = finishedActions.length;
   WebViewController? _animationController;
   String currentAction = 'No activity';
@@ -57,9 +58,9 @@ class _HomePageState extends State<HomePage> {
   };
 
   final Map<String, String> roomMap = {
-    'Red': 'red',
+    'Green': 'red',
     'White': 'white',
-    'Black': 'black',
+    'Purple': 'black',
     'Blue': 'blue'
   };
 
@@ -85,10 +86,30 @@ class _HomePageState extends State<HomePage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
-            // Update loading bar.
+            setState(() {
+              isLoading = progress < 100;
+            });
           },
-          onPageStarted: (String url) {},
-          onPageFinished: (String url) {},
+          onPageStarted: (String url) {
+            setState(() {
+              isLoading = true;
+              isAnimationRunning = false;
+            });
+
+            Future.delayed(Duration(seconds: 1), () {
+              if (!mounted)
+                return; // Avoid calling setState if the widget is disposed
+              setState(() {
+                isAnimationRunning = true;
+              });
+            });
+          },
+          onPageFinished: (String url) {
+            setState(() {
+              isLoading = false;
+              isAnimationRunning = true;
+            });
+          },
           onWebResourceError: (WebResourceError error) {},
           onNavigationRequest: (NavigationRequest request) {
             if (request.url.startsWith('https://www.youtube.com/')) {
@@ -127,7 +148,6 @@ class _HomePageState extends State<HomePage> {
       if (totalExp > 90) {
         _exp = (totalExp - 90) - 100 * (_level - 10);
       } else {
-        print('asd');
         _exp = totalExp - 10 * (_level - 1);
       }
       acc = level;
@@ -162,7 +182,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _editExperience(int gainedExp) async {
-    print(gainedExp);
     await FirebaseFirestore.instance.collection('level').doc(acc.id).update({
       "experience": _totalExperience + gainedExp,
       "email": user?.email ?? 'User email',
@@ -243,11 +262,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _finishActivity() {
-    print('cast');
-    int selectedCat =
-        _categoryToInt(finishedActions[updatedFinishedActions].category);
-    int selectedDif =
-        _dificultyToInt(finishedActions[updatedFinishedActions].difficulty);
+    int selectedCat = _categoryToInt(finishedActions.last.category);
+    int selectedDif = _dificultyToInt(finishedActions.last.difficulty);
     int selectedDur = finishedActions.last.duration;
     _editExperience(selectedDur * selectedDif * selectedCat);
     setState(() {
@@ -282,7 +298,7 @@ class _HomePageState extends State<HomePage> {
     if (currentAction == 'No activity') {
       act = Category.others.toString();
     } else {
-      act = finishedActions[updatedFinishedActions].category.toString();
+      act = finishedActions.last.category.toString();
     }
 
     setState(() {
@@ -400,15 +416,13 @@ class _HomePageState extends State<HomePage> {
       child: IconButton(
         onPressed: () {
           _loadFirestoreLevel();
-          print('hi ' + user.toString());
+
           setState(() {
             if (currentAction == 'loading' || currentAction == 'finished') {
               _animationController!.loadRequest(Uri.parse(
                 'https://gerardjm018.github.io/animationproto/' +
                     roomMap[room]! +
-                    animationMap[finishedActions[updatedFinishedActions]
-                        .category
-                        .toString()]!,
+                    animationMap[finishedActions.last.category.toString()]!,
               ));
             } else {
               _animationController!.loadRequest(Uri.parse(
@@ -418,7 +432,6 @@ class _HomePageState extends State<HomePage> {
               ));
             }
           });
-          print(animation);
         },
         icon: Icon(
           Icons.refresh,
@@ -600,11 +613,20 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      Container(
-                          width: 390,
-                          height: 430,
-                          child:
-                              WebViewWidget(controller: _animationController!)),
+                      Stack(
+                        children: [
+                          Container(
+                            width: 390,
+                            height: 430,
+                            child: WebViewWidget(
+                                controller: _animationController!),
+                          ),
+                          if (isLoading || !isAnimationRunning)
+                            Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        ],
+                      ) // Show loading indicator while WebView is loading
                     ],
                   ))),
         ),
@@ -631,9 +653,9 @@ class _HomePageState extends State<HomePage> {
               alignment: Alignment.center,
               children: [
                 isActionLoading
-                    ? CircularProgressIndicator(
-                        strokeWidth: 3.0,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ? SquareCircularProgressIndicator(
+                        size: 50.0, // Replace this with your desired size
+                        color: Colors.white,
                       )
                     : Icon(
                         // Conditionally set the icon here
@@ -690,6 +712,25 @@ class TimerController extends GetxController {
         remainingSeconds--;
       }
     });
+  }
+}
+
+class SquareCircularProgressIndicator extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  SquareCircularProgressIndicator({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      child: CircularProgressIndicator(
+        strokeWidth: 3.0,
+        valueColor: AlwaysStoppedAnimation<Color>(color),
+      ),
+    );
   }
 }
 
@@ -1004,11 +1045,15 @@ class _MyRoomState extends State<MyRoom> {
       final level = doc.data();
       final totalExp = level.experience;
       _totalExperience = totalExp;
-      _level = (totalExp / 1000).floorToDouble().round();
-      if (totalExp >= 1000) {
-        _exp = totalExp - 1000 * _level;
+      if (totalExp <= 90) {
+        _level = 1 + (totalExp / 10).floorToDouble().round();
       } else {
-        _exp = totalExp;
+        _level = ((totalExp - 90) / 100).floorToDouble().round() + 10;
+      }
+      if (totalExp > 90) {
+        _exp = (totalExp - 90) - 100 * (_level - 10);
+      } else {
+        _exp = totalExp - 10 * (_level - 1);
       }
       acc = level;
       room = level.room;
@@ -1040,10 +1085,16 @@ class _MyRoomState extends State<MyRoom> {
       ));
     } else {
       return Card(
+          color: Colors.grey,
           child: Container(
-        child: Center(child: Text('Unlocked at level ' + levelC.toString())),
-        height: 70,
-      ));
+            child: Center(
+                child: Opacity(
+                    opacity: 0.8,
+                    child: Text(
+                      'Unlocked at level ' + levelC.toString(),
+                    ))),
+            height: 70,
+          ));
     }
   }
 
@@ -1056,9 +1107,9 @@ class _MyRoomState extends State<MyRoom> {
       body: ListView(
         children: [
           _cardRoom('White', 1),
-          _cardRoom('Blue', 10),
-          _cardRoom('Red', 20),
-          _cardRoom('Black', 30),
+          _cardRoom('Blue', 5),
+          _cardRoom('Purple', 15),
+          _cardRoom('Green', 30),
         ],
       ),
     );

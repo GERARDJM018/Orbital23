@@ -44,16 +44,16 @@ class _MoodChartState extends State<MoodChart> {
       };
     });
 
-    print(Provider.of<MoodCard>(context, listen: false).data);
+    
 
     Provider.of<MoodCard>(context, listen: false).data.forEach((element) {
       if (element.moodno == 1) {
-        print(dataMap['Angry'].toString() + ' abc');
+        
         dataMap['Angry'] = (dataMap['Angry'] ?? 0) + 1;
       } else if (element.moodno == 2) {
         dataMap['Happy'] = (dataMap['Happy'] ?? 0) + 1;
       } else if (element.moodno == 3) {
-        print(dataMap['Sad'].toString() + ' abd');
+       
         dataMap['Sad'] = (dataMap['Sad'] ?? 0) + 1;
       } else if (element.moodno == 4) {
         dataMap['Surprised'] = (dataMap['Surprised'] ?? 0) + 1;

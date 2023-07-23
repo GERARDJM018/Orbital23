@@ -28,9 +28,9 @@ class _SettingPageState extends State<SettingPage> {
 
   @override
   void initState() {
-    initializeData();
     // TODO: implement initState
     super.initState();
+    initializeData();
     _level = 0;
     _exp = 0;
     _totalExperience = 0;
@@ -70,7 +70,7 @@ class _SettingPageState extends State<SettingPage> {
   Future<void> initializeData() async {
     await fetchData();
     await countHabits(); // Update the number of habits done before updating the UI
-    calculateEmotions();
+    await calculateEmotions();
     // Add other initialization tasks here if needed
 
     // Once all the data is fetched and initialized, trigger a rebuild of the UI
@@ -151,9 +151,9 @@ class _SettingPageState extends State<SettingPage> {
     await Auth(FirebaseAuth.instance).signOut();
   }
 
-  void calculateEmotions() async {
+  Future<void> calculateEmotions() async {
     QuerySnapshot<Map<String, dynamic>> snapshot =
-        await FirebaseFirestore.instance.collection('user_moods').get();
+        await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection('user_moods').get();
 
     setState(() {
       numberOfMoodsSaved = snapshot.size;

@@ -37,7 +37,8 @@ class MoodCard extends ChangeNotifier {
   String? image;
   String? actimage;
   String? actname;
-  MoodCard({this.actimage, this.actname, this.date, this.image, this.mood});
+  FirebaseFirestore? store = FirebaseFirestore.instance;
+  MoodCard({this.actimage, this.actname, this.date, this.image, this.mood, this.store});
   late List items;
   List<MoodData> data = [];
 
@@ -65,8 +66,8 @@ class MoodCard extends ChangeNotifier {
     List<String> uniqueActivityName = activityname.toSet().toList();
 
     // Reference the user_moods subcollection for the specific account
-    final accountRef =
-        FirebaseFirestore.instance.collection('users').doc(accountId);
+    final accountRef = store == null ? FirebaseFirestore.instance.collection('users').doc(accountId) :
+        store!.collection('users').doc(accountId);
     final userMoodsRef = accountRef.collection('user_moods');
 
     await userMoodsRef.add({
@@ -96,8 +97,8 @@ class MoodCard extends ChangeNotifier {
     String docId,
   ) async {
     // Reference the user_moods subcollection for the specific account
-    final accountRef =
-        FirebaseFirestore.instance.collection('users').doc(accountId);
+    final accountRef = store == null ? FirebaseFirestore.instance.collection('users').doc(accountId) :
+        store!.collection('users').doc(accountId);
     final userMoodsRef = accountRef.collection('user_moods');
 
     await userMoodsRef.doc(docId).delete();

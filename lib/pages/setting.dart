@@ -81,31 +81,42 @@ class _SettingPageState extends State<SettingPage> {
     numberOfHabitsDone = 0; // Reset the count before calculating
     User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
-      QuerySnapshot<Map<String, dynamic>> dateSnapshots =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUser.uid)
-              .collection('habits')
-              .get();
+      try {
+        QuerySnapshot<Map<String, dynamic>> dateSnapshots =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUser.uid)
+                .collection('habits')
+                .get();
+        print(111);
+        print(dateSnapshots.docs.length);
 
-      for (QueryDocumentSnapshot<Map<String, dynamic>> dateSnapshot
-          in dateSnapshots.docs) {
-        CollectionReference habitsCollection =
-            dateSnapshot.reference.collection('habits');
-        QuerySnapshot<Map<String, dynamic>> habitsSnapshot =
-            await habitsCollection.get() as QuerySnapshot<Map<String, dynamic>>;
+        for (QueryDocumentSnapshot<
+                Map<String, dynamic>> dateSnapshot //datesnapshot == tanggal
+            in dateSnapshots.docs) {
+          CollectionReference habitsCollection =
+              dateSnapshot.reference.collection('habits');
+          QuerySnapshot<Map<String, dynamic>> habitsSnapshot =
+              await habitsCollection.get()
+                  as QuerySnapshot<Map<String, dynamic>>;
+          print(habitsSnapshot.docs.toString());
+          print(habitsSnapshot.docs.length);
 
-        habitsSnapshot.docs.forEach((habitDoc) {
-          Map<String, dynamic> habitData = habitDoc.data();
-          List<dynamic> habitList = habitData["habit"];
+          habitsSnapshot.docs.forEach((habitDoc) {
+            Map<String, dynamic> habitData = habitDoc.data();
+            List<dynamic> habitList = habitData["habit"];
 
-          if (habitList.length >= 2) {
-            bool habitCompleted = habitList[1];
-            if (habitCompleted) {
-              numberOfHabitsDone++; // Increment the count of habits done
+            if (habitList.length >= 2) {
+              bool habitCompleted = habitList[1];
+              if (habitCompleted) {
+                print(habitList[0]);
+                numberOfHabitsDone++; // Increment the count of habits done
+              }
             }
-          }
-        });
+          });
+        }
+      } catch (e) {
+        print('Error querying data: $e');
       }
 
       print('Number of habits done: $numberOfHabitsDone');

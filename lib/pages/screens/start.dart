@@ -606,6 +606,10 @@ class _StartPageState extends State<StartPage> {
                           ontapcount = 0;
                           selectedMood = null;
                           selectedMoodImage = null;
+                          canSaveMood = false;
+                          setState(() {
+                            selectedActivities.clear();
+                          });
 
                           calculateConsecutiveDays();
                           calculateWeekly();

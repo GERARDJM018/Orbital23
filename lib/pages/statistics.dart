@@ -201,27 +201,17 @@ class _StatisticsState extends State<Statistics> {
 
     // Create a new habit with the name and completion status
     Map<String, dynamic> newHabitData = {
-      "habit": [_newHabitNameController.text, false],
+      'habit': [_newHabitNameController.text, false],
+      'string': '0', // Add the 'string' field with the value '0'
     };
 
     // Check if the habit subcollection for the current date exists
-    DocumentSnapshot<Object?> dateSnapshot =
-        await habitsCollection.doc(currentDateStr).get();
-
-    if (dateSnapshot.exists) {
-      // If the subcollection for the current date exists, add a new habit document to it
-      await habitsCollection
-          .doc(currentDateStr)
-          .collection("habits")
-          .add(newHabitData);
-    } else {
-      // If the subcollection for the current date doesn't exist, create it and add a new habit document to it
-
-      await habitsCollection
-          .doc(currentDateStr)
-          .collection("habits")
-          .add(newHabitData);
-    }
+    habitsCollection.doc(currentDateStr).set({'x': 0});
+    // If the subcollection for the current date exists, add a new habit document to it
+    await habitsCollection
+        .doc(currentDateStr)
+        .collection('habits')
+        .add(newHabitData);
 
     _newHabitNameController.clear();
     calculateHabitPercentage();

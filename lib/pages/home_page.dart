@@ -34,7 +34,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isLoading = true;
   bool isAnimationRunning = false;
-  int updatedFinishedActions = finishedActions.length;
   WebViewController? _animationController;
   String currentAction = 'No activity';
   String animation = 'Category.others';
@@ -68,60 +67,69 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+
     _level = 0;
     _exp = 0;
     _totalExperience = 0;
     room = 'blue';
     _loadFirestoreLevel();
-
     String roomCol = 'White';
 
-    _getRoomC().then((String result) {
-      roomCol = result;
-    });
-
-    _animationController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int progress) {
-            setState(() {
-              isLoading = progress < 100;
-            });
-          },
-          onPageStarted: (String url) {
-            setState(() {
-              isLoading = true;
-              isAnimationRunning = false;
-            });
-
-            Future.delayed(Duration(seconds: 1), () {
-              if (!mounted)
-                return; // Avoid calling setState if the widget is disposed
+    // Define a function to initialize the WebViewController and load the request
+    void initializeWebView(String roomCol) {
+      _animationController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0x00000000))
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onProgress: (int progress) {
               setState(() {
+                isLoading = progress < 100;
+              });
+            },
+            onPageStarted: (String url) {
+              setState(() {
+                isLoading = true;
                 isAnimationRunning = true;
               });
-            });
-          },
-          onPageFinished: (String url) {
-            setState(() {
-              isLoading = false;
-              isAnimationRunning = true;
-            });
-          },
-          onWebResourceError: (WebResourceError error) {},
-          onNavigationRequest: (NavigationRequest request) {
-            if (request.url.startsWith('https://www.youtube.com/')) {
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse('https://gerardjm018.github.io/animationproto/' +
-          roomMap[roomCol]! +
-          animationMap[Category.others.toString()]!));
+
+              Future.delayed(Duration(seconds: 1), () {
+                if (!mounted)
+                  return; // Avoid calling setState if the widget is disposed
+                setState(() {
+                  isAnimationRunning = true;
+                });
+              });
+            },
+            onPageFinished: (String url) {
+              setState(() {
+                isLoading = false;
+                isAnimationRunning = true;
+              });
+            },
+            onWebResourceError: (WebResourceError error) {},
+            onNavigationRequest: (NavigationRequest request) {
+              if (request.url.startsWith('https://www.youtube.com/')) {
+                return NavigationDecision.prevent;
+              }
+              return NavigationDecision.navigate;
+            },
+          ),
+        )
+        ..loadRequest(Uri.parse(
+            'https://gerardjm018.github.io/animationproto/' +
+                roomMap[roomCol]! +
+                animationMap[Category.others.toString()]!));
+    }
+
+    // Call _getRoomC() and wait for the result before initializing the WebView
+    _getRoomC().then((String result) {
+      setState(() {
+        roomCol = result; // Set the state variable roomCol
+        initializeWebView(
+            roomCol); // Initialize WebView with the obtained roomCol value
+      });
+    });
   }
 
   _loadFirestoreLevel() async {
@@ -219,10 +227,12 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             currentAction = 'finished';
           });
+        } else if (progressPercentage <= -1.0) {
+          timer.cancel();
         } else {
           progressPercentage += increment;
         }
-      });
+      }); //here
     });
   }
 
@@ -618,13 +628,19 @@ class _HomePageState extends State<HomePage> {
                           Container(
                             width: 390,
                             height: 430,
-                            child: WebViewWidget(
-                                controller: _animationController!),
+                            child: _animationController == null
+                                ? Center(
+                                    child: Transform.scale(
+                                      scale:
+                                          3, // Adjust the scale to make the indicator smaller or larger
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 5,
+                                      ),
+                                    ),
+                                  )
+                                : WebViewWidget(
+                                    controller: _animationController!),
                           ),
-                          if (isLoading || !isAnimationRunning)
-                            Center(
-                              child: CircularProgressIndicator(),
-                            ),
                         ],
                       ) // Show loading indicator while WebView is loading
                     ],

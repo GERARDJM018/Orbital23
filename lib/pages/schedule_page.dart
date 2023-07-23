@@ -122,146 +122,151 @@ class _SchedulePageState extends State<SchedulePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 199, 200, 196),
-      body: Padding(
-          padding: EdgeInsets.all(10),
-          child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-            SizedBox(
-              height: 30,
-            ),
-            Container(
-              width: 150,
-              padding: EdgeInsets.only(left: 10, right: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white,
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: const Color.fromARGB(255, 199, 200, 196),
+        body: Padding(
+            padding: EdgeInsets.all(10),
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+              SizedBox(
+                height: 30,
               ),
-              child: DropdownButtonFormField(
-                value: _calendarMode,
-                items: calenderMode
-                    .map(
-                      (category) => DropdownMenuItem(
-                        value: category,
-                        child: Text(category),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-                  setState(() {
-                    if (value == 'Month') {
-                      _calendarMode = value;
-                      _calendarFormat = CalendarFormat.month;
-                    } else if (value == 'Week') {
-                      _calendarMode = value;
-                      _calendarFormat = CalendarFormat.week;
-                    } else {
-                      _calendarMode = value;
-                      _calendarFormat = CalendarFormat.twoWeeks;
-                    }
-                  });
-                },
-                decoration: InputDecoration(
-                  border:
-                      InputBorder.none, // Remove the border around the button
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            Container(
+              Container(
+                width: 150,
+                padding: EdgeInsets.only(left: 10, right: 10),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20)),
+                  borderRadius: BorderRadius.circular(20),
                   color: Colors.white,
                 ),
-                child: tableCalendar(context)),
-            Expanded(
-                child: ListView(children: [
-              ..._getEventsForTheDay(_selectedDay).map(
-                (event) => Card(
-                    child: EventItem(
-                        event: event,
-                        onTap: () async {
-                          final res = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => EditEvent(
-                                  firstDate: _firstDay,
-                                  lastDate: _lastDay,
-                                  event: event),
-                            ),
-                          );
-                          if (res ?? false) {
-                            _loadFirestoreEvents();
-                          }
-                        },
-                        onDelete: () async {
-                          final delete = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text("Delete Event?"),
-                              content: const Text(
-                                  "Are you sure you want to delete?"),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.black,
-                                  ),
-                                  child: const Text("No"),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.red,
-                                  ),
-                                  child: const Text("Yes"),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (delete ?? false) {
-                            await FirebaseFirestore.instance
-                                .collection('events')
-                                .doc(event.id)
-                                .delete();
-                            _loadFirestoreEvents();
-                          }
-                        })),
-              )
-            ])),
-          ])),
-      floatingActionButton: FloatingActionButton(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        heroTag: "schedule",
-        backgroundColor: Colors.orange,
-        onPressed: () async {
-          final result = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddEvent(
-                firstDate: _firstDay,
-                lastDate: _lastDay,
-                selectedDate: _selectedDay,
+                child: DropdownButtonFormField(
+                  value: _calendarMode,
+                  items: calenderMode
+                      .map(
+                        (category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      if (value == 'Month') {
+                        _calendarMode = value;
+                        _calendarFormat = CalendarFormat.month;
+                      } else if (value == 'Week') {
+                        _calendarMode = value;
+                        _calendarFormat = CalendarFormat.week;
+                      } else {
+                        _calendarMode = value;
+                        _calendarFormat = CalendarFormat.twoWeeks;
+                      }
+                    });
+                  },
+                  decoration: InputDecoration(
+                    border:
+                        InputBorder.none, // Remove the border around the button
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  ),
+                ),
               ),
-            ),
-          );
-          if (result ?? false) {
-            _loadFirestoreEvents();
-          }
-        },
-        child: const Icon(Icons.add),
+              SizedBox(
+                height: 20,
+              ),
+              Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20)),
+                    color: Colors.white,
+                  ),
+                  child: tableCalendar(context)),
+              Expanded(
+                  child: ListView(children: [
+                ..._getEventsForTheDay(_selectedDay).map(
+                  (event) => Card(
+                      child: EventItem(
+                          event: event,
+                          onTap: () async {
+                            final res = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditEvent(
+                                    firstDate: _firstDay,
+                                    lastDate: _lastDay,
+                                    event: event),
+                              ),
+                            );
+                            if (res ?? false) {
+                              _loadFirestoreEvents();
+                            }
+                          },
+                          onDelete: () async {
+                            final delete = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text("Delete Event?"),
+                                content: const Text(
+                                    "Are you sure you want to delete?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.black,
+                                    ),
+                                    child: const Text("No"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                    ),
+                                    child: const Text("Yes"),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (delete ?? false) {
+                              await FirebaseFirestore.instance
+                                  .collection('events')
+                                  .doc(event.id)
+                                  .delete();
+                              _loadFirestoreEvents();
+                            }
+                          })),
+                )
+              ])),
+            ])),
+        floatingActionButton: FloatingActionButton(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          heroTag: "schedule",
+          backgroundColor: Colors.orange,
+          onPressed: () async {
+            final result = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddEvent(
+                  firstDate: _firstDay,
+                  lastDate: _lastDay,
+                  selectedDate: _selectedDay,
+                ),
+              ),
+            );
+            if (result ?? false) {
+              _loadFirestoreEvents();
+            }
+          },
+          child: const Icon(Icons.add),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

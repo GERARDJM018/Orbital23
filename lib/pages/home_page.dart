@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> {
 
   final Map<String, String> roomMap = {
     'Green': 'red',
-    'White': 'white',
+    'Brown': 'white',
     'Purple': 'black',
     'Blue': 'blue'
   };
@@ -73,7 +73,7 @@ class _HomePageState extends State<HomePage> {
     _totalExperience = 0;
     room = 'blue';
     _loadFirestoreLevel();
-    String roomCol = 'White';
+    String roomCol = 'Brown';
 
     // Define a function to initialize the WebViewController and load the request
     void initializeWebView(String roomCol) {
@@ -173,7 +173,7 @@ class _HomePageState extends State<HomePage> {
             toFirestore: (level, options) => level.toFirestore())
         .get();
 
-    String abc = 'White';
+    String abc = 'Brown';
     for (var doc in snap.docs) {
       final level = doc.data();
       abc = level.room;
@@ -185,7 +185,7 @@ class _HomePageState extends State<HomePage> {
     await FirebaseFirestore.instance.collection('level').add({
       "experience": 0,
       "email": user?.email ?? 'User email',
-      "room": "White",
+      "room": "Brown",
     });
   }
 
@@ -452,43 +452,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _room(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          margin: EdgeInsets.only(right: 2, left: 4),
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFFF9F59), Color(0xFFF98A4F)],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.orange.withOpacity(0.5),
-                spreadRadius: 2,
-                blurRadius: 6,
-                offset: Offset(0, 3),
+    return SafeArea(
+      child: Column(
+        children: [
+          Container(
+            margin: EdgeInsets.only(right: 2, left: 4),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFF9F59), Color(0xFFF98A4F)],
               ),
-            ],
-          ),
-          child: IconButton(
-            onPressed: _OpenRoomOverlay,
-            icon: Icon(
-              Icons.chair,
-              color: Colors.white,
-              size: 30,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 6,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: IconButton(
+              onPressed: _OpenRoomOverlay,
+              icon: Icon(
+                Icons.chair,
+                color: Colors.white,
+                size: 30,
+              ),
             ),
           ),
-        ),
-        Text('Room',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ))
-      ],
+          Text('Room',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ))
+        ],
+      ),
     );
   }
 
@@ -1116,16 +1118,32 @@ class _MyRoomState extends State<MyRoom> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Room Customization"),
-      ),
-      body: ListView(
+    return SafeArea(
+      child: Column(
         children: [
-          _cardRoom('White', 1),
-          _cardRoom('Blue', 5),
-          _cardRoom('Purple', 15),
-          _cardRoom('Green', 30),
+          Container(
+            height: 15,
+          ),
+          Expanded(
+            child: Scaffold(
+              appBar: AppBar(
+                title: Container(
+                    child: Column(
+                  children: [
+                    Text("Room Customization"),
+                  ],
+                )),
+              ),
+              body: ListView(
+                children: [
+                  _cardRoom('Brown', 1),
+                  _cardRoom('Blue', 5),
+                  _cardRoom('Purple', 15),
+                  _cardRoom('Green', 30),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

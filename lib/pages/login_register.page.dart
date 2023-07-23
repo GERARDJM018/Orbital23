@@ -31,7 +31,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } on FirebaseAuthException catch (e) {
       setState(() {
-        errorMessage = e.message;
+        errorMessage = 'Please input the email and password correctly';
       });
     }
   }
@@ -62,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } on FirebaseAuthException catch (e) {
       setState(() {
-        errorMessage = e.message;
+        errorMessage = 'Please input the email and password correctly';
       });
     }
   }
@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } else if (errorMessage != '') {
       return Text(
-        'Humm ? $errorMessage',
+        '$errorMessage',
         style: const TextStyle(color: Colors.red),
       );
     } else {
@@ -246,7 +246,7 @@ class _ResetPageState extends State<ResetPage> {
       );
     } else if (errorMessage != '') {
       return Text(
-        'Humm ? $errorMessage',
+        '$errorMessage',
         style: const TextStyle(color: Colors.red),
       );
     } else {

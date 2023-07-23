@@ -135,10 +135,16 @@ class _StatisticsState extends State<Statistics> {
 
   void editHabit(String id, TextEditingController controller) async {
     String userID = getUserId();
-    DocumentReference userDoc = firestore.collection("users").doc(userID);
-    DocumentReference habits = userDoc.collection("habits").doc(id);
+    String currentDateStr = convertDateTimeToString(DateTime.now());
 
-    await habits.update({
+    DocumentReference userDoc = firestore.collection("users").doc(userID);
+    DocumentReference habit = userDoc
+        .collection("habits")
+        .doc(currentDateStr)
+        .collection("habits")
+        .doc(id);
+
+    await habit.update({
       'habit': [controller.text, false]
     });
     controller.clear();

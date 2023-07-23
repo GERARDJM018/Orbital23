@@ -16,7 +16,7 @@ class EnterNewHabitBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color.fromARGB(255, 205, 180, 180),
+      backgroundColor: Color.fromARGB(255, 157, 155, 155),
       content: TextField(
         controller: controller,
         style: const TextStyle(color: Color.fromRGBO(255, 255, 255, 1)),
@@ -30,15 +30,17 @@ class EnterNewHabitBox extends StatelessWidget {
         ), //
       ),
       actions: [
-
         MaterialButton(
           onPressed: onCancel,
-          child: Text('Cancel', style: TextStyle(color: Colors.white)),
-          color: Colors.black,
-        ),  MaterialButton(
+          child: Text('Cancel',
+              style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0))),
+          color: Color.fromARGB(255, 219, 116, 116),
+        ),
+        MaterialButton(
           onPressed: onSave,
-          child: Text('Save', style: TextStyle(color: Colors.white)),
-          color: Colors.black,
+          child: Text('Save',
+              style: TextStyle(color: const Color.fromARGB(255, 11, 11, 11))),
+          color: Color.fromARGB(255, 115, 239, 181),
         ),
       ],
     );

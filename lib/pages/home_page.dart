@@ -34,7 +34,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isLoading = true;
   bool isAnimationRunning = false;
-  int updatedFinishedActions = finishedActions.length;
   WebViewController? _animationController;
   String currentAction = 'No activity';
   String animation = 'Category.others';
@@ -59,7 +58,7 @@ class _HomePageState extends State<HomePage> {
 
   final Map<String, String> roomMap = {
     'Green': 'red',
-    'White': 'white',
+    'Brown': 'white',
     'Purple': 'black',
     'Blue': 'blue'
   };
@@ -68,60 +67,69 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+
     _level = 0;
     _exp = 0;
     _totalExperience = 0;
     room = 'blue';
     _loadFirestoreLevel();
+    String roomCol = 'Brown';
 
-    String roomCol = 'White';
-
-    _getRoomC().then((String result) {
-      roomCol = result;
-    });
-
-    _animationController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int progress) {
-            setState(() {
-              isLoading = progress < 100;
-            });
-          },
-          onPageStarted: (String url) {
-            setState(() {
-              isLoading = true;
-              isAnimationRunning = false;
-            });
-
-            Future.delayed(Duration(seconds: 1), () {
-              if (!mounted)
-                return; // Avoid calling setState if the widget is disposed
+    // Define a function to initialize the WebViewController and load the request
+    void initializeWebView(String roomCol) {
+      _animationController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0x00000000))
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onProgress: (int progress) {
               setState(() {
+                isLoading = progress < 100;
+              });
+            },
+            onPageStarted: (String url) {
+              setState(() {
+                isLoading = true;
                 isAnimationRunning = true;
               });
-            });
-          },
-          onPageFinished: (String url) {
-            setState(() {
-              isLoading = false;
-              isAnimationRunning = true;
-            });
-          },
-          onWebResourceError: (WebResourceError error) {},
-          onNavigationRequest: (NavigationRequest request) {
-            if (request.url.startsWith('https://www.youtube.com/')) {
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse('https://gerardjm018.github.io/animationproto/' +
-          roomMap[roomCol]! +
-          animationMap[Category.others.toString()]!));
+
+              Future.delayed(Duration(seconds: 1), () {
+                if (!mounted)
+                  return; // Avoid calling setState if the widget is disposed
+                setState(() {
+                  isAnimationRunning = true;
+                });
+              });
+            },
+            onPageFinished: (String url) {
+              setState(() {
+                isLoading = false;
+                isAnimationRunning = true;
+              });
+            },
+            onWebResourceError: (WebResourceError error) {},
+            onNavigationRequest: (NavigationRequest request) {
+              if (request.url.startsWith('https://www.youtube.com/')) {
+                return NavigationDecision.prevent;
+              }
+              return NavigationDecision.navigate;
+            },
+          ),
+        )
+        ..loadRequest(Uri.parse(
+            'https://gerardjm018.github.io/animationproto/' +
+                roomMap[roomCol]! +
+                animationMap[Category.others.toString()]!));
+    }
+
+    // Call _getRoomC() and wait for the result before initializing the WebView
+    _getRoomC().then((String result) {
+      setState(() {
+        roomCol = result; // Set the state variable roomCol
+        initializeWebView(
+            roomCol); // Initialize WebView with the obtained roomCol value
+      });
+    });
   }
 
   _loadFirestoreLevel() async {
@@ -165,7 +173,7 @@ class _HomePageState extends State<HomePage> {
             toFirestore: (level, options) => level.toFirestore())
         .get();
 
-    String abc = 'White';
+    String abc = 'Brown';
     for (var doc in snap.docs) {
       final level = doc.data();
       abc = level.room;
@@ -177,7 +185,7 @@ class _HomePageState extends State<HomePage> {
     await FirebaseFirestore.instance.collection('level').add({
       "experience": 0,
       "email": user?.email ?? 'User email',
-      "room": "White",
+      "room": "Brown",
     });
   }
 
@@ -219,10 +227,12 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             currentAction = 'finished';
           });
+        } else if (progressPercentage <= -1.0) {
+          timer.cancel();
         } else {
           progressPercentage += increment;
         }
-      });
+      }); //here
     });
   }
 
@@ -442,43 +452,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _room(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          margin: EdgeInsets.only(right: 2, left: 4),
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFFF9F59), Color(0xFFF98A4F)],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.orange.withOpacity(0.5),
-                spreadRadius: 2,
-                blurRadius: 6,
-                offset: Offset(0, 3),
+    return SafeArea(
+      child: Column(
+        children: [
+          Container(
+            margin: EdgeInsets.only(right: 2, left: 4),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFF9F59), Color(0xFFF98A4F)],
               ),
-            ],
-          ),
-          child: IconButton(
-            onPressed: _OpenRoomOverlay,
-            icon: Icon(
-              Icons.chair,
-              color: Colors.white,
-              size: 30,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 6,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: IconButton(
+              onPressed: _OpenRoomOverlay,
+              icon: Icon(
+                Icons.chair,
+                color: Colors.white,
+                size: 30,
+              ),
             ),
           ),
-        ),
-        Text('Room',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ))
-      ],
+          Text('Room',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ))
+        ],
+      ),
     );
   }
 
@@ -618,13 +630,19 @@ class _HomePageState extends State<HomePage> {
                           Container(
                             width: 390,
                             height: 430,
-                            child: WebViewWidget(
-                                controller: _animationController!),
+                            child: _animationController == null
+                                ? Center(
+                                    child: Transform.scale(
+                                      scale:
+                                          3, // Adjust the scale to make the indicator smaller or larger
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 5,
+                                      ),
+                                    ),
+                                  )
+                                : WebViewWidget(
+                                    controller: _animationController!),
                           ),
-                          if (isLoading || !isAnimationRunning)
-                            Center(
-                              child: CircularProgressIndicator(),
-                            ),
                         ],
                       ) // Show loading indicator while WebView is loading
                     ],
@@ -1100,16 +1118,32 @@ class _MyRoomState extends State<MyRoom> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Room Customization"),
-      ),
-      body: ListView(
+    return SafeArea(
+      child: Column(
         children: [
-          _cardRoom('White', 1),
-          _cardRoom('Blue', 5),
-          _cardRoom('Purple', 15),
-          _cardRoom('Green', 30),
+          Container(
+            height: 15,
+          ),
+          Expanded(
+            child: Scaffold(
+              appBar: AppBar(
+                title: Container(
+                    child: Column(
+                  children: [
+                    Text("Room Customization"),
+                  ],
+                )),
+              ),
+              body: ListView(
+                children: [
+                  _cardRoom('Brown', 1),
+                  _cardRoom('Blue', 5),
+                  _cardRoom('Purple', 15),
+                  _cardRoom('Green', 30),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

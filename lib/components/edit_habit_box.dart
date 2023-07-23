@@ -126,4 +126,3 @@ class _EditHabitBoxState extends State<EditHabitBox> {
     }
     return '';
   }
-}

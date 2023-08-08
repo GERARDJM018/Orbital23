@@ -427,41 +427,66 @@ class _StartPageState extends State<StartPage> {
             ),
             Container(
               width: MediaQuery.of(context).size.width * 0.9,
-              height: 80,
+              height: 100,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: Color.fromARGB(255, 205, 225, 231),
+                color: currentLottie == happyLottie
+                    ? Colors.yellow
+                    : currentLottie == sadLottie
+                        ? Colors.blue
+                        : currentLottie == angryLottie
+                            ? Colors.red
+                            : currentLottie == surprisedLottie
+                                ? Colors.purple
+                                : currentLottie == lovingLottie
+                                    ? Colors.pink
+                                    : Colors.green,
                 border: Border.all(
                   color: Colors.black,
                   width: 2.0,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: Center(
-                child: RichText(
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: const Color.fromARGB(255, 9, 9, 9),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'MOOD SAVED:',
+                      style: TextStyle(
+                        fontFamily: 'Raleway',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: const Color.fromARGB(255, 9, 9, 9),
+                      ),
                     ),
-                    children: [
-                      TextSpan(
-                          text: 'MOOD SAVED: ', style: TextStyle(fontSize: 20)),
-                      TextSpan(
-                        text: '  $numberOfDays',
-                        style: TextStyle(
-                          fontSize: 30,
-                        ),
+                    SizedBox(height: 5),
+                    Text(
+                      '$numberOfDays',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: const Color.fromARGB(255, 9, 9, 9),
                       ),
-                      TextSpan(
-                        text: '  days in a row',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.normal,
-                        ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      'days in a row',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.normal,
+                        color: const Color.fromARGB(255, 9, 9, 9),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -475,54 +500,68 @@ class _StartPageState extends State<StartPage> {
             ),
             SizedBox(height: 3),
             Container(
-              height: 70,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: moods.length,
-                itemExtent: MediaQuery.of(context).size.width / 4.5,
-                itemBuilder: (context, index) {
-                  return Row(
-                    children: <Widget>[
-                      GestureDetector(
-                        child: MoodIcon(
-                          image: moods[index].moodimage,
-                          name: moods[index].name,
-                          colour: moods[index].iselected
-                              ? Colors.black
-                              : Colors.white,
+                height: 80,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: moods.length,
+                  itemExtent: MediaQuery.of(context).size.width / 4.5,
+                  itemBuilder: (context, index) {
+                    return Row(
+                      children: <Widget>[
+                        Container(
+                          margin: EdgeInsets.all(
+                              4), // Add margin for spacing between items
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors
+                                .white, // Set the background color of the container
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset:
+                                    Offset(0, 3), // changes position of shadow
+                              ),
+                            ],
+                          ),
+                          child: GestureDetector(
+                            child: MoodIcon(
+                              image: moods[index].moodimage,
+                              name: moods[index].name,
+                              colour: moods[index].iselected
+                                  ? Colors.black
+                                  : Colors.white,
+                            ),
+                            onTap: () {
+                              if (ontapcount == 0) {
+                                setState(() {
+                                  mood = moods[index].name;
+                                  image = moods[index].moodimage;
+                                  selectedMood = moods[index].name;
+                                  selectedMoodImage = moods[index].moodimage;
+                                  moods[index].iselected = true;
+                                  ontapcount = ontapcount + 1;
+                                  if (selectedActivities.isNotEmpty) {
+                                    canSaveMood = true;
+                                  }
+                                });
+                              } else if (moods[index].iselected) {
+                                setState(() {
+                                  moods[index].iselected = false;
+                                  selectedMood = null;
+                                  selectedMoodImage = null;
+                                  ontapcount = 0;
+                                  canSaveMood = false;
+                                });
+                              }
+                            },
+                          ),
                         ),
-                        onTap: () => {
-                          if (ontapcount == 0)
-                            {
-                              setState(() {
-                                mood = moods[index].name;
-                                image = moods[index].moodimage;
-                                selectedMood = moods[index].name;
-                                selectedMoodImage = moods[index].moodimage;
-                                moods[index].iselected = true;
-                                ontapcount = ontapcount + 1;
-                                if (selectedActivities.isNotEmpty) {
-                                  canSaveMood = true;
-                                }
-                              }),
-                            }
-                          else if (moods[index].iselected)
-                            {
-                              setState(() {
-                                moods[index].iselected = false;
-                                selectedMood = null;
-                                selectedMoodImage = null;
-                                ontapcount = 0;
-                                canSaveMood = false;
-                              }),
-                            }
-                        },
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
+                      ],
+                    );
+                  },
+                )),
             SizedBox(height: 10),
             Text(
               'What have you been doing?',
@@ -538,18 +577,33 @@ class _StartPageState extends State<StartPage> {
                 itemBuilder: (context, index) {
                   return Row(
                     children: <Widget>[
-                      SizedBox(
-                        width: 15,
-                      ),
-                      GestureDetector(
-                        child: ActivityIcon(
-                          act[index].image,
-                          act[index].name,
-                          act[index].selected ? Colors.black : Colors.white,
+                      Container(
+                        margin: EdgeInsets.all(
+                            4), // Add margin for spacing between items
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors
+                              .white, // Set the background color of the container
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset:
+                                  Offset(0, 3), // changes position of shadow
+                            ),
+                          ],
                         ),
-                        onTap: () {
-                          _toggleActivitySelection(index);
-                        },
+                        child: GestureDetector(
+                          child: ActivityIcon(
+                            act[index].image,
+                            act[index].name,
+                            act[index].selected ? Colors.black : Colors.white,
+                          ),
+                          onTap: () {
+                            _toggleActivitySelection(index);
+                          },
+                        ),
                       ),
                     ],
                   );

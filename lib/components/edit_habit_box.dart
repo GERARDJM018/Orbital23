@@ -7,13 +7,17 @@ class EditHabitBox extends StatefulWidget {
     Key? key,
     required this.onSave,
     required this.docId,
-    required this.controller,
+    required this.nameController,
+    required this.durationController,
+    required this.noteController,
     required this.onCancel,
   }) : super(key: key);
 
   final VoidCallback onSave;
   final String docId;
-  final TextEditingController controller;
+  final TextEditingController nameController;
+  final TextEditingController durationController;
+  final TextEditingController noteController;
   final VoidCallback onCancel;
 
   @override
@@ -36,31 +40,79 @@ class _EditHabitBoxState extends State<EditHabitBox> {
             String stringValue = data['string']; // Access the 'stringValue' key
 
             return AlertDialog(
-              backgroundColor: Colors.grey[900],
-              content: TextField(
-                controller: widget.controller,
-                style: const TextStyle(color: Color.fromRGBO(255, 255, 255, 1)),
-                decoration: InputDecoration(
-                  hintText: data['habit'][0],
-                  hintStyle: TextStyle(color: Colors.grey[600]),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
+              backgroundColor: Color.fromARGB(255, 255, 255, 255),
+              content: Container(
+                height: 200,
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: widget.nameController,
+                      style:
+                          const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                      decoration: InputDecoration(
+                        hintText: data['habit'][0],
+                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: const Color.fromARGB(255, 0, 0, 0))),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: const Color.fromARGB(255, 0, 0, 0))),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    TextField(
+                      controller: widget.durationController,
+                      style:
+                          const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                      decoration: InputDecoration(
+                        hintText: data['duration'].toString(),
+                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: const Color.fromARGB(255, 0, 0, 0))),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: const Color.fromARGB(255, 0, 0, 0))),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    TextField(
+                      controller: widget.noteController,
+                      style:
+                          const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                      decoration: InputDecoration(
+                        hintText: data['note'].toString(),
+                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: const Color.fromARGB(255, 0, 0, 0))),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: const Color.fromARGB(255, 0, 0, 0))),
+                      ),
+                    )
+                  ],
                 ),
               ),
               actions: [
                 MaterialButton(
                   onPressed: widget.onCancel,
-                  child: Text('Cancel', style: TextStyle(color: Colors.white)),
-                  color: Colors.black,
+                  child: Text('Cancel',
+                      style:
+                          TextStyle(color: const Color.fromARGB(255, 0, 0, 0))),
+                  color: Color.fromARGB(255, 219, 116, 116),
                 ),
                 MaterialButton(
                   onPressed: widget.onSave,
-                  child: Text('Save', style: TextStyle(color: Colors.white)),
-                  color: Colors.black,
+                  child: Text('Save',
+                      style:
+                          TextStyle(color: Color.fromARGB(255, 252, 252, 252))),
+                  color: Color.fromARGB(255, 115, 239, 181),
                 ),
               ],
             );
@@ -126,3 +178,4 @@ class _EditHabitBoxState extends State<EditHabitBox> {
     }
     return '';
   }
+}

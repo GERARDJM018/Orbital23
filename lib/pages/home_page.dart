@@ -7,7 +7,11 @@ import 'dart:async';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:zenith/class/level.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:zenith/datetime/date_time.dart';
+import 'package:zenith/pages/statistics.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 //line 406
 
 final List<Actions1> finishedActions = [
@@ -48,6 +52,7 @@ class _HomePageState extends State<HomePage> {
   late int _totalExperience;
   late Level acc;
   late String room;
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   final Map<String, String> animationMap = {
     'Category.others': 'others.html',
@@ -74,6 +79,17 @@ class _HomePageState extends State<HomePage> {
     room = 'blue';
     _loadFirestoreLevel();
     String roomCol = 'Brown';
+
+    String getUserId() {
+      // new change
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        return user.uid;
+      }
+      // If the user is not authenticated or null, handle the case accordingly
+      // For example, you can return a default or empty string
+      return '';
+    }
 
     // Define a function to initialize the WebViewController and load the request
     void initializeWebView(String roomCol) {
@@ -804,12 +820,55 @@ class NewAction extends StatefulWidget {
   _NewActionState createState() => _NewActionState();
 }
 
+enum NewActionMode {
+  ChooseHabit,
+  InputManually,
+}
+
 class _NewActionState extends State<NewAction> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
   final _titleController = TextEditingController();
   final _timeController = TextEditingController();
   final _noteController = TextEditingController();
   Category _selectedCategory = Category.study;
   Difficulty _selectedDifficulty = Difficulty.easy;
+
+  NewActionMode _currentMode = NewActionMode.ChooseHabit;
+
+  void _onChooseHabitButtonPressed() {
+    setState(() {
+      _currentMode = NewActionMode.ChooseHabit;
+    });
+  }
+
+  void _onInputManuallyButtonPressed() {
+    setState(() {
+      _currentMode = NewActionMode.InputManually;
+    });
+  }
+
+  String getUserId() {
+    // new change
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return user.uid;
+    }
+    // If the user is not authenticated or null, handle the case accordingly
+    // For example, you can return a default or empty string
+    return '';
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamData() {
+    String userID = getUserId();
+    // Get the current date in "yyyy-mm-dd" format
+    String currentDateStr = convertDateTimeToString(DateTime.now());
+
+    CollectionReference habits =
+        firestore.collection("users").doc(userID).collection("habits");
+
+    // Listen to the "habits" subcollection for the current date only
+    return habits.doc(currentDateStr).collection("habits").snapshots();
+  }
 
   void _submitActionData() {
     final enteredDuration = int.tryParse(_timeController.text);
@@ -831,6 +890,8 @@ class _NewActionState extends State<NewAction> {
               ));
       return;
     }
+    print(_titleController.text);
+    print(enteredDuration);
     widget.onAddAction(Actions1(
         // onAddAction at line 6
         title: _titleController.text,
@@ -839,6 +900,7 @@ class _NewActionState extends State<NewAction> {
         category: _selectedCategory,
         note: _noteController.text));
     _HomePageState().activitySet(_titleController);
+
     Navigator.pop(context);
   }
 
@@ -853,165 +915,15 @@ class _NewActionState extends State<NewAction> {
         Expanded(
           child: Scaffold(
             appBar: AppBar(
-              title: Text('New Action'),
+              title: Text('Action Panel'),
             ),
             body: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                 child: ListView(
-                  children: [
-                    TextField(
-                      controller: _titleController,
-                      maxLength: 20,
-                      keyboardType: TextInputType.name,
-                      decoration: InputDecoration(
-                        labelText: 'Title',
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.grey, // Outline color
-                            width: 2, // Outline width
-                          ),
-                          borderRadius:
-                              BorderRadius.circular(8), // Rounded corners
-                        ),
-                      ),
-                    ),
-                    TextField(
-                      controller: _timeController,
-                      maxLength: 50,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                          suffixText: 'minutes ',
-                          labelText: 'Duration',
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.grey, // Outline color
-                              width: 2, // Outline width
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                            // Rounded corners
-                          )),
-                    ),
-                    TextField(
-                      controller: _noteController,
-                      maxLength: 100,
-                      keyboardType: TextInputType.name,
-                      decoration: InputDecoration(
-                          suffixText: ' ',
-                          labelText: 'Note',
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.grey, // Outline color
-                              width: 2, // Outline width
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                            // Rounded corners
-                          )),
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey,
-                                width: 2,
-                              ),
-                            ),
-                            child: DropdownButtonFormField<Category>(
-                              value: _selectedCategory,
-                              items: Category.values.map((category) {
-                                return DropdownMenuItem(
-                                  value: category,
-                                  child: Text(
-                                    category.name,
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _selectedCategory = value;
-                                  });
-                                }
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Category',
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 5,
-                        ),
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey,
-                                width: 2,
-                              ),
-                            ),
-                            child: DropdownButtonFormField<Difficulty>(
-                              value: _selectedDifficulty,
-                              items: Difficulty.values.map((difficulty) {
-                                return DropdownMenuItem(
-                                  value: difficulty,
-                                  child: Text(
-                                    difficulty.name,
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _selectedDifficulty = value;
-                                  });
-                                }
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Difficulty',
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    ElevatedButton(
-                      onPressed: _submitActionData,
-                      style: ElevatedButton.styleFrom(
-                        primary: Colors.orange, // Set the background color
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(8), // Rounded corners
-                        ),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12), // Add padding
-                      ),
-                      child: const Text(
-                        "Save",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white, // Set the text color
-                        ),
-                      ),
-                    ),
-                  ],
+                  children: _currentMode == NewActionMode.ChooseHabit
+                      ? _buildChooseHabitView()
+                      : _buildInputManuallyView(),
                 ),
               ),
             ),
@@ -1019,6 +931,411 @@ class _NewActionState extends State<NewAction> {
         ),
       ],
     );
+  }
+
+  List<Widget> _buildChooseHabitView() {
+    return [
+      Expanded(
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _onChooseHabitButtonPressed,
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text(
+                  "Existing Habit",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 10,
+            ),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _onInputManuallyButtonPressed,
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text(
+                  "New Habit",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  void saveNewHabit2(BuildContext context) async {
+    String userID = getUserId();
+    DocumentReference userDoc = firestore.collection("users").doc(userID);
+    CollectionReference habitsCollection = userDoc.collection("habits");
+
+    // Get the current date in "yyyy-mm-dd" format
+    String currentDateStr = convertDateTimeToString(DateTime.now());
+
+    // Create a new habit with the name and completion status
+    Map<String, dynamic> newHabitData = {
+      'habit': [_titleController.text, false],
+      'duration': _timeController.text,
+      'note': _noteController.text,
+      'difficulty': _selectedDifficulty.toString(),
+      'category': _selectedCategory.toString(),
+
+      'string': '0', // Add the 'string' field with the value '0'
+    };
+
+    // Check if the habit subcollection for the current date exists
+    habitsCollection.doc(currentDateStr).set({'x': 0});
+    // If the subcollection for the current date exists, add a new habit document to it
+    await habitsCollection
+        .doc(currentDateStr)
+        .collection('habits')
+        .add(newHabitData);
+
+    _titleController.clear();
+    _timeController.clear();
+    _noteController.clear();
+    //calculateHabitPercentage();
+
+    // Pop dialog box
+    Navigator.of(context).pop();
+
+    //await calculateHeatMapData();
+    setState(() {});
+  }
+
+  void thisFunction() {
+    _submitActionData();
+    saveNewHabit2(context);
+  }
+
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _suggestedHabits = [];
+
+  void _onHabitSearchChanged(String query) {
+    // Access the stream data and filter the habits based on the query
+    streamData().listen((snapshot) {
+      print(snapshot);
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> matchingHabits = [];
+      print(999);
+      print(snapshot.docs.length);
+      for (var doc in snapshot.docs) {
+        final habitData = doc.data() as Map<String, dynamic>;
+        final habitName = habitData['habit'][0] as String;
+        print(habitName);
+        print(doc['duration']);
+
+        if (habitName.toLowerCase().startsWith(query.toLowerCase())) {
+          print('hahaha');
+          print(123);
+          matchingHabits.add(doc);
+          print('hahaha');
+          print(matchingHabits.length);
+        }
+      }
+
+      setState(() {
+        _suggestedHabits = matchingHabits;
+      });
+    });
+  }
+
+  void _onSuggestedHabitSelected(
+      QueryDocumentSnapshot<Map<String, dynamic>> habit) {
+    // Populate the TextField with the selected habit
+    print(11);
+    final habitData = habit.data();
+
+    final habitName = habitData['habit'][0] as String;
+    _titleController.text = habitName;
+    final habitduration = habitData['duration'];
+    _timeController.text = habitduration;
+    final habitnote = habitData['note'];
+    _noteController.text = habitnote;
+    _selectedCategory = habitData['category'];
+    _selectedDifficulty = habitData['difficulty'];
+    print(777);
+    print(habitName);
+    //_timeController.text = habit['duration'].toString();
+    //_noteController.text = habit['note'].toString();
+    //_selectedCategory = habit['category'];
+    //_selectedDifficulty = habit['difficulty'];
+
+    // Clear the suggestions
+    setState(() {
+      _suggestedHabits = [];
+    });
+  }
+
+  List<Widget> _buildInputManuallyView() {
+    return [
+      Expanded(
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _onChooseHabitButtonPressed,
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text(
+                  "Existing Habit",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 10,
+            ),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _onInputManuallyButtonPressed,
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text(
+                  "New Habit",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      SizedBox(height: 10),
+      Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey, width: 2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Suggestions:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            SizedBox(height: 5),
+            Wrap(
+              spacing: 8,
+              children: _suggestedHabits.map((habit) {
+                return ElevatedButton(
+                  onPressed: () {
+                    _onSuggestedHabitSelected(habit);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    habit.data()['habit'][0],
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+      SizedBox(
+        height: 10,
+      ),
+      TextField(
+        controller: _titleController,
+        maxLength: 20,
+        keyboardType: TextInputType.name,
+        onChanged: _onHabitSearchChanged,
+        decoration: InputDecoration(
+          labelText: 'Title',
+          border: OutlineInputBorder(
+            borderSide: BorderSide(
+              color: Colors.grey, // Outline color
+              width: 2, // Outline width
+            ),
+            borderRadius: BorderRadius.circular(8), // Rounded corners
+          ),
+        ),
+      ),
+      TextField(
+        controller: _timeController,
+        maxLength: 50,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+            suffixText: 'minutes ',
+            labelText: 'Duration',
+            border: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: Colors.grey, // Outline color
+                width: 2, // Outline width
+              ),
+              borderRadius: BorderRadius.circular(8),
+              // Rounded corners
+            )),
+      ),
+      TextField(
+        controller: _noteController,
+        maxLength: 100,
+        keyboardType: TextInputType.name,
+        decoration: InputDecoration(
+            suffixText: ' ',
+            labelText: 'Note',
+            border: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: Colors.grey, // Outline color
+                width: 2, // Outline width
+              ),
+              borderRadius: BorderRadius.circular(8),
+              // Rounded corners
+            )),
+      ),
+      const SizedBox(
+        height: 16,
+      ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.grey,
+                  width: 2,
+                ),
+              ),
+              child: DropdownButtonFormField<Category>(
+                value: _selectedCategory,
+                items: Category.values.map((category) {
+                  return DropdownMenuItem(
+                    value: category,
+                    child: Text(
+                      category.name,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedCategory = value;
+                    });
+                  }
+                },
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(
+            width: 5,
+          ),
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.grey,
+                  width: 2,
+                ),
+              ),
+              child: DropdownButtonFormField<Difficulty>(
+                value: _selectedDifficulty,
+                items: Difficulty.values.map((difficulty) {
+                  return DropdownMenuItem(
+                    value: difficulty,
+                    child: Text(
+                      difficulty.name,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedDifficulty = value;
+                    });
+                  }
+                },
+                decoration: InputDecoration(
+                  labelText: 'Difficulty',
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(
+            width: 10,
+          ),
+        ],
+      ),
+      SizedBox(
+        height: 10,
+      ),
+      ElevatedButton(
+        onPressed: thisFunction,
+        style: ElevatedButton.styleFrom(
+          primary: Colors.orange, // Set the background color
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8), // Rounded corners
+          ),
+          padding:
+              EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Add padding
+        ),
+        child: const Text(
+          "Save",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white, // Set the text color
+          ),
+        ),
+      ),
+
+      // Rest of the code remains the same
+    ];
   }
 }
 

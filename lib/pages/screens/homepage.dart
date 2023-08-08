@@ -70,82 +70,94 @@ class _HomeScreenState extends State<HomeScreen> {
                 moodCardProvider.actiname.clear();
                 moodCardProvider.data.clear();
 
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: docs.length,
-                  itemBuilder: (context, int position) {
-                    var doc = docs[position];
-                    var data = doc.data() as Map<String, dynamic>?;
-                    count++;
+                return Container(
+                  margin: EdgeInsets.all(8.0),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: docs.length,
+                    itemBuilder: (context, int position) {
+                      var doc = docs[position];
+                      var data = doc.data() as Map<String, dynamic>?;
+                      count++;
 
-                    if (data == null) {
-                      return SizedBox.shrink();
-                    }
+                      if (data == null) {
+                        return SizedBox.shrink();
+                      }
 
-                    var imageString = data[
-                        'actimage']; // data['actimage'] is empty, find who initialized it
-                    List<String> img = [];
-                    if (imageString != null) {
-                      img = imageString.split('_');
-                    }
+                      var imageString = data[
+                          'actimage']; // data['actimage'] is empty, find who initialized it
+                      List<String> img = [];
+                      if (imageString != null) {
+                        img = imageString.split('_');
+                      }
 
-                    var nameString = data['actname'];
-                    List<String> name = [];
-                    if (nameString != null) {
-                      name = nameString.split('_');
-                    }
+                      var nameString = data['actname'];
+                      List<String> name = [];
+                      if (nameString != null) {
+                        name = nameString.split('_');
+                      }
 
-                    moodCardProvider.actiname.addAll(name);
+                      moodCardProvider.actiname.addAll(name);
 
-                    moodCardProvider.data.add(
-                      MoodData(
-                        data['mood'] == 'Angry'
-                            ? 1
-                            : data['mood'] == 'Happy'
-                                ? 2
-                                : data['mood'] == 'Sad'
-                                    ? 3
-                                    : data['mood'] == 'Surprised'
-                                        ? 4
-                                        : data['mood'] == 'Loving'
-                                            ? 5
-                                            : data['mood'] == 'Scared'
-                                                ? 6
-                                                : 7,
-                        doc.id, // Use the document ID as the date for the mood card
-                        data['mood'] == 'Angry'
-                            ? charts.ColorUtil.fromDartColor(Colors.red)
-                            : data['mood'] == 'Happy'
-                                ? charts.ColorUtil.fromDartColor(Colors.blue)
-                                : data['mood'] == 'Sad'
-                                    ? charts.ColorUtil.fromDartColor(
-                                        Colors.green)
-                                    : data['mood'] == 'Surprised'
-                                        ? charts.ColorUtil.fromDartColor(
-                                            Colors.pink)
-                                        : data['mood'] == 'Loving'
-                                            ? charts.ColorUtil.fromDartColor(
-                                                Colors.purple)
-                                            : data['mood'] == 'Scared'
-                                                ? charts.ColorUtil
-                                                    .fromDartColor(Colors.black)
-                                                : charts.ColorUtil
-                                                    .fromDartColor(
-                                                        Colors.white),
-                      ),
-                    );
-                    if (doc.id == null) {}
+                      moodCardProvider.data.add(
+                        MoodData(
+                          data['mood'] == 'Angry'
+                              ? 1
+                              : data['mood'] == 'Happy'
+                                  ? 2
+                                  : data['mood'] == 'Sad'
+                                      ? 3
+                                      : data['mood'] == 'Surprised'
+                                          ? 4
+                                          : data['mood'] == 'Loving'
+                                              ? 5
+                                              : data['mood'] == 'Scared'
+                                                  ? 6
+                                                  : 7,
+                          doc.id, // Use the document ID as the date for the mood card
+                          data['mood'] == 'Angry'
+                              ? charts.ColorUtil.fromDartColor(Colors.red)
+                              : data['mood'] == 'Happy'
+                                  ? charts.ColorUtil.fromDartColor(Colors.blue)
+                                  : data['mood'] == 'Sad'
+                                      ? charts.ColorUtil.fromDartColor(
+                                          Colors.green)
+                                      : data['mood'] == 'Surprised'
+                                          ? charts.ColorUtil.fromDartColor(
+                                              Colors.pink)
+                                          : data['mood'] == 'Loving'
+                                              ? charts.ColorUtil.fromDartColor(
+                                                  Colors.purple)
+                                              : data['mood'] == 'Scared'
+                                                  ? charts.ColorUtil
+                                                      .fromDartColor(
+                                                          Colors.black)
+                                                  : charts.ColorUtil
+                                                      .fromDartColor(
+                                                          Colors.white),
+                        ),
+                      );
+                      if (doc.id == null) {}
 
-                    return MoodDay(
-                      userId,
-                      doc.id,
-                      data['image'],
-                      data['date'],
-                      data['mood'],
-                      img.toList(), //wrong
-                      name.toList(),
-                    );
-                  },
+                      return Card(
+                        // Wrap the MoodDay widget with Card
+                        elevation:
+                            4, // You can adjust the elevation as per your preference
+                        margin: EdgeInsets.symmetric(
+                            vertical:
+                                8.0), // Add some vertical spacing between cards
+                        child: MoodDay(
+                          userId,
+                          doc.id,
+                          data['image'],
+                          data['date'],
+                          data['mood'],
+                          img.toList(), //wrong
+                          name.toList(),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),

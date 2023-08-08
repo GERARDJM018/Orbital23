@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zenith/datetime/date_time.dart';
 import 'package:zenith/monthly_summary.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:zenith/models/actions.dart';
 
 class Statistics extends StatefulWidget {
   const Statistics({super.key});
@@ -23,6 +24,8 @@ class _StatisticsState extends State<Statistics> {
   Map<DateTime, int> heatMapDataSet = {};
   DateTime? firstLoginDate;
   double overallCompletionPercentage = 0.0;
+  final Category _selectedCategory = Category.study;
+  final Difficulty _selectedDifficulty = Difficulty.easy;
 
   @override
   void initState() {
@@ -133,7 +136,12 @@ class _StatisticsState extends State<Statistics> {
     calculateHabitPercentage();
   }
 
-  void editHabit(String id, TextEditingController controller) async {
+  void editHabit(
+    String id,
+    TextEditingController nameController,
+    TextEditingController durationController,
+    TextEditingController noteController,
+  ) async {
     String userID = getUserId();
     String currentDateStr = convertDateTimeToString(DateTime.now());
 
@@ -145,9 +153,13 @@ class _StatisticsState extends State<Statistics> {
         .doc(id);
 
     await habit.update({
-      'habit': [controller.text, false]
+      'habit': [nameController.text, false],
+      'duration': durationController.text,
+      'note': noteController.text
     });
-    controller.clear();
+    nameController.clear();
+    durationController.clear();
+    noteController.clear();
     await calculateHeatMapData();
 
     setState(() {});
@@ -161,10 +173,50 @@ class _StatisticsState extends State<Statistics> {
       context: context,
       builder: (context) {
         return EditHabitBox(
-          onSave: () => editHabit(id, _newHabitNameController),
+          onSave: () => {
+            if (_newHabitNameController.toString() == '')
+              {
+                _showAlertDialog(context),
+              }
+            else
+              {
+                editHabit(id, _newHabitNameController, _durationController,
+                    _noteController),
+              }
+          },
           docId: id,
-          controller: _newHabitNameController,
+          nameController: _newHabitNameController,
+          durationController: _durationController,
+          noteController: _noteController,
           onCancel: cancelDialogBox,
+        );
+      },
+    );
+  }
+
+  void _showAlertDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Alert Dialog Title'),
+          content: Text('This is the content of the alert dialog.'),
+          actions: <Widget>[
+            // Add buttons to the dialog
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                // Do something when OK is pressed
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
         );
       },
     );
@@ -196,8 +248,10 @@ class _StatisticsState extends State<Statistics> {
   }
 
   final _newHabitNameController = TextEditingController();
+  final _durationController = TextEditingController();
+  final _noteController = TextEditingController();
 
-  void saveNewHabit2(BuildContext context) async {
+  void saveNewHabit2(BuildContext context, Difficulty dif, Category cat) async {
     String userID = getUserId();
     DocumentReference userDoc = firestore.collection("users").doc(userID);
     CollectionReference habitsCollection = userDoc.collection("habits");
@@ -208,6 +262,11 @@ class _StatisticsState extends State<Statistics> {
     // Create a new habit with the name and completion status
     Map<String, dynamic> newHabitData = {
       'habit': [_newHabitNameController.text, false],
+      'duration': _durationController.text,
+      'note': _noteController.text,
+      'difficulty': dif.toString(),
+      'category': cat.toString(),
+
       'string': '0', // Add the 'string' field with the value '0'
     };
 
@@ -220,6 +279,8 @@ class _StatisticsState extends State<Statistics> {
         .add(newHabitData);
 
     _newHabitNameController.clear();
+    _durationController.clear();
+    _noteController.clear();
     calculateHabitPercentage();
 
     // Pop dialog box
@@ -232,6 +293,7 @@ class _StatisticsState extends State<Statistics> {
   void cancelNewHabit() {
     // clear textfield
     _newHabitNameController.clear();
+    _durationController.clear();
 
     // pop dialog box
     Navigator.of(context).pop();
@@ -242,10 +304,13 @@ class _StatisticsState extends State<Statistics> {
       context: context,
       builder: (context) {
         return EnterNewHabitBox(
-          controller: _newHabitNameController,
-          hintText: 'Enter Habit Name...',
-          onSave: () => saveNewHabit2(context), // Pass the context
+          nameController: _newHabitNameController,
+          durationController: _durationController,
+          noteController: _noteController,
+          onSave: (a, b) => saveNewHabit2(context, a, b), // Pass the context
           onCancel: cancelNewHabit,
+          selectedCategory: _selectedCategory,
+          selectedDifficulty: _selectedDifficulty,
         );
       },
     );
@@ -320,6 +385,12 @@ class _StatisticsState extends State<Statistics> {
     setState(() {
       this.overallCompletionPercentage = overallCompletionPercentage;
     });
+  }
+
+  String parseDifficultyString(String input) {
+    final parsedValue =
+        input.split('.')[1]; // Split the input and get the second part
+    return parsedValue;
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> streamData() {
@@ -409,6 +480,21 @@ class _StatisticsState extends State<Statistics> {
                               deleteTapped: (context) =>
                                   deleteHabit(listAllhabits[index].id),
                               habitId: listAllhabits[index].id,
+                              duration:
+                                  "${(listAllhabits[index].data() as Map<String, dynamic>)["duration"]}"
+                                      .toString(),
+                              note:
+                                  "${(listAllhabits[index].data() as Map<String, dynamic>)["note"]}"
+                                      .toString(),
+                              onCancel: () {
+                                Navigator.of(context).pop();
+                              },
+                              selectedCategory: parseDifficultyString(
+                                  "${(listAllhabits[index].data() as Map<String, dynamic>)["category"]}"
+                                      .toString()),
+                              selectedDifficulty: parseDifficultyString(
+                                  "${(listAllhabits[index].data() as Map<String, dynamic>)["difficulty"]}"
+                                      .toString()),
                             );
                           },
                         ),

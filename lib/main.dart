@@ -22,7 +22,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        fontFamily: 'Roboto',
       ).copyWith(
         useMaterial3: false,
         appBarTheme: const AppBarTheme().copyWith(

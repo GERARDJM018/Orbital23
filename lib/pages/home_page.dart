@@ -1014,16 +1014,15 @@ class _NewActionState extends State<NewAction> {
         .collection('habits')
         .add(newHabitData);
 
-    _titleController.clear();
-    _timeController.clear();
-    _noteController.clear();
+    // _titleController.clear();
+    // _timeController.clear();
+    // _noteController.clear();
     //calculateHabitPercentage();
 
     // Pop dialog box
-    Navigator.of(context).pop();
+    // Navigator.of(context).pop();
 
     //await calculateHeatMapData();
-    setState(() {});
   }
 
   void thisFunction() {
